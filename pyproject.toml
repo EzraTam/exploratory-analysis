@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "exploratory-analysis"
+version = "0.1.0"
+description = ""
+authors = ["Ezra Tampubolon <ezra.tampubolon@googlemail.com>"]
+readme = "README.md"
+packages = [{include = "exploratory_analysis"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^1.5.1"
+seaborn = "^0.12.1"
+xlrd = "^2.0.1"
+networkx = "^2.8.7"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.16.2"
+pylint = "^2.15.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
