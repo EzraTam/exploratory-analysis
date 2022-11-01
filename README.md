@@ -1,0 +1,1 @@
+Package for exploratory analysis of data. Jupyter notebook for analysing the superstore data is also contained.
