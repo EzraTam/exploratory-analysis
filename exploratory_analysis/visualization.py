@@ -1,8 +1,11 @@
+"""Visualization module
+"""
+
+from collections import Counter
+from typing import List, Tuple, Optional
 import pandas as pd
 import seaborn as sns
-from typing import List, Tuple,Optional
 import matplotlib.pyplot as plt
-from collections import Counter
 
 
 def plot_boxplots(
@@ -12,6 +15,18 @@ def plot_boxplots(
     title: str,
     figsize: Tuple[int, int],
 ) -> None:
+    """Function for visualizing data by
+    boxplot
+
+    Args:
+        data (pd.DataFrame): Input DF
+        x_feature (str): Feature/column for the x-axis
+            of the boxplot
+        li_y_features (List[str]): List of features/columns
+            to be plotted
+        title (str): Title of the plot
+        figsize (Tuple[int, int]): Size of the figure
+    """
     assert (
         x_feature in data.columns
     ), "Data does not have the queried column for the x-axis"
@@ -32,7 +47,10 @@ def plot_boxplots(
 
 
 def create_pie_chart_from_multi_idx_df(
-    data: pd.DataFrame, title: str, col_plotted: str, ordering_sub_category: Optional[list] = None
+    data: pd.DataFrame,
+    title: str,
+    col_plotted: str,
+    ordering_sub_category: Optional[list] = None,
 ) -> None:
     """Create pie charts from two-level-indexed DF. Each pie chart corresponds
     to a first level index (a.k.a. category) and depicts the quantity specified

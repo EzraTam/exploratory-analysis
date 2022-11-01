@@ -1,29 +1,55 @@
+"""Preprocessing Module
+"""
+
+from typing import List, Dict, Union
 import pandas as pd
 import exploratory_analysis.basic_functions as bf
-from typing import List, Dict, Union
 
 
 def transform_col_nm_to_snake(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Transform column names to snake case
+
+    Args:
+        dataframe (pd.DataFrame): Input DF
+
+    Returns:
+        pd.DataFrame: Output DF
+    """
     return dataframe.rename(
         columns={col_nm: bf.snake_case(col_nm) for col_nm in dataframe.columns}
     )
 
 
 def new_time_col(dataframe: pd.DataFrame, col: str, how: str) -> pd.DataFrame:
-    if how == "year":
-        to = "%Y"
-    elif how == "month":
-        to = "%m"
-    elif how == "day":
-        to = "%d"
-    elif how == "weekday":
-        to = "%w"
+    """Create formatted time column
 
-    dataframe[how] = dataframe[col].apply(lambda x: x.strftime(to))
+    Args:
+        dataframe (pd.DataFrame): Input DF
+        col (str): Name of the time column to be transformed
+        how (str): Format of the new time column
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+
+    # Configuration dictionary with key how
+    # and value the corresponding expression
+    _conf_dict = dict(year="%Y", month="%m", day="%d", weekday="%w")
+
+    dataframe[how] = dataframe[col].apply(lambda x: x.strftime(_conf_dict[how]))
     return dataframe
 
 
 def year_month_day_col(dataframe: pd.DataFrame, col: str) -> pd.DataFrame:
+    """Create year, month, and date day column
+
+    Args:
+        dataframe (pd.DataFrame): Input DF
+        col (str): Name of the given time column
+
+    Returns:
+        pd.DataFrame: Output DF
+    """
 
     li_to_extract = ["year", "month", "day"]
 
