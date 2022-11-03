@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from types import MethodType
 from functools import reduce
 import pandas as pd
@@ -15,6 +15,29 @@ def merge_columns(li_df: List[pd.DataFrame], key: str) -> pd.DataFrame:
         lambda df_current, df_add: join_on_col(df_current, df_add, key), li_df
     )
 
+def set_type_col_pd(
+    df_to_set: pd.DataFrame, col_to_set: str, type: str
+) -> pd.DataFrame:
+    df_to_set[col_to_set] = {
+        "str": df_to_set[col_to_set].astype(str),
+        "int": df_to_set[col_to_set].astype(int),
+    }[type]
+    return df_to_set
+
+def recurse_list_get_attribute_pd(
+    input: Union[pd.DataFrame, pd.Series], list_to_recurse: List[str]
+) -> pd.Series:
+
+    if not list_to_recurse:
+        return input
+
+    attr = list_to_recurse[0]
+    fg_attr_method_type = isinstance(getattr(input, attr), MethodType)
+
+    return recurse_list_get_attribute_pd(
+        input=getattr(input, attr)() if fg_attr_method_type else getattr(input, attr),
+        list_to_recurse=list_to_recurse[1:],
+    )
 
 def basic_analysis(df_input: pd.DataFrame) -> dict:
 
@@ -24,18 +47,16 @@ def basic_analysis(df_input: pd.DataFrame) -> dict:
         num_null=["isna", "sum"],
     )
 
-    li_df = []
-
-    for info_nm, li_attr in info_to_extract.items():
-        df_temp = df_input
-        for attr in li_attr:
-            if isinstance(getattr(df_temp, attr), MethodType):
-                df_temp = getattr(df_temp, attr)()
-            else:
-                df_temp = getattr(df_temp, attr)
-        df_temp = pd.DataFrame(df_temp, columns=[info_nm]).reset_index(names=["col_nm"])
-        df_temp["col_nm"] = df_temp["col_nm"].astype(str)
-        li_df.append(df_temp)
+    li_df = [
+        set_type_col_pd(
+            df_to_set=pd.DataFrame(
+                recurse_list_get_attribute_pd(df_input, li_attr), columns=[info_nm]
+            ).reset_index(names=["col_nm"]),
+            col_to_set="col_nm",
+            type="str",
+        )
+        for info_nm, li_attr in info_to_extract.items()
+    ]
 
     df_info = merge_columns(li_df=li_df, key="col_nm")
     num_rows = df_input.shape[0]
