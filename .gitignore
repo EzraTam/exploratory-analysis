@@ -2,3 +2,4 @@
 .vscode
 *.pyc
 data
+notebooks/nkd_interview.ipynb

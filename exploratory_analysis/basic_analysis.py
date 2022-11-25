@@ -16,12 +16,14 @@ def merge_columns(li_df: List[pd.DataFrame], key: str) -> pd.DataFrame:
     )
 
 def set_type_col_pd(
-    df_to_set: pd.DataFrame, col_to_set: str, type: str
+    df_to_set: pd.DataFrame, col_to_set: str, type_col: str
 ) -> pd.DataFrame:
-    df_to_set[col_to_set] = {
-        "str": df_to_set[col_to_set].astype(str),
-        "int": df_to_set[col_to_set].astype(int),
-    }[type]
+    if type_col == "str":
+        df_to_set[col_to_set].astype(str)
+
+    if type_col == "int":
+        df_to_set[col_to_set].astype(str)
+
     return df_to_set
 
 def recurse_list_get_attribute_pd(
@@ -39,7 +41,7 @@ def recurse_list_get_attribute_pd(
         list_to_recurse=list_to_recurse[1:],
     )
 
-def basic_analysis(df_input: pd.DataFrame) -> dict:
+def basic_analysis_df(df_input: pd.DataFrame) -> dict:
 
     info_to_extract = dict(
         type=["dtypes"],
@@ -53,7 +55,7 @@ def basic_analysis(df_input: pd.DataFrame) -> dict:
                 recurse_list_get_attribute_pd(df_input, li_attr), columns=[info_nm]
             ).reset_index(names=["col_nm"]),
             col_to_set="col_nm",
-            type="str",
+            type_col="str",
         )
         for info_nm, li_attr in info_to_extract.items()
     ]
