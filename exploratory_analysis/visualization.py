@@ -130,7 +130,7 @@ class MultiIdxDF:
         """
         return [
             self.multi_idx_df.xs(category)[which_col]
-            for category in self.sub_categories
+            for category in self.categories
         ]
 
     def create_pie_chart(
