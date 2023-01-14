@@ -9,8 +9,8 @@ import exploratory_analysis.basic_functions as bf
 def transform_col_nm(
     dataframe: pd.DataFrame,
     how: str,
-    what: Optional[str] = None,
-    by: Optional[str] = None,
+    what_char: Optional[str] = None,
+    by_char: Optional[str] = None,
 ) -> pd.DataFrame:
     """Transform column names
 
@@ -20,10 +20,10 @@ def transform_col_nm(
             Existing methods:
                 'to_snake' - transform the column names to snake case
                 'replace' - replace a certain character in the column names by another character.
-                    Choosing this option requires changing the what and the by variables
-        what (str): Need to be specified if how == 'replace'.
+                    Choosing this option requires changing the what_char and the by_char variables
+        what_char (str): Need to be specified if how == 'replace'.
             Here you can specify which character in the column name should be replaced.
-        by (str): Need to be specified if how == 'replace'.
+        by_char (str): Need to be specified if how == 'replace'.
             Here you can specify by which character the character specified in the variable what
             in the column name should be replaced.
 
@@ -35,15 +35,15 @@ def transform_col_nm(
 
     if how == "replace":
         assert (
-            what is not None
+            what_char is not None
         ), "Please specify in the variable what, which character should be replaced!"
         assert (
-            what is not None
+            what_char is not None
         ), "Please specify in the variable by, by which character what should be replaced!"
 
     transform_func = {
         "to_snake": bf.snake_case,
-        "replace": lambda col: col.replace(what, by),
+        "replace": lambda col: col.replace(what_char, by_char),
     }[how]
 
     return dataframe.rename(
