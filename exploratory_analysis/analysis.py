@@ -10,6 +10,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
+
 
 def show_corr_matrix_filtered(
     df_input: pd.DataFrame,
@@ -131,7 +134,7 @@ class CorrelationFeatures:
         df_input: pd.DataFrame,
         dummies_dict: Dict[str, List[str]],
         filtered_df: Optional[pd.DataFrame] = None,
-        filter_option: Optional[Dict[str,float]] = None
+        filter_option: Optional[Dict[str, float]] = None,
     ) -> None:
         """Initialization
 
@@ -143,8 +146,8 @@ class CorrelationFeatures:
                 value: List of resulting columns
         """
 
-        self.df_input=df_input
-        self.dummies_dict=dummies_dict
+        self.df_input = df_input
+        self.dummies_dict = dummies_dict
 
         # Compute the correlation between the features
         # The correlation between one-hot-encoded features will not be shown (a.k.a. set = nan)
@@ -155,12 +158,14 @@ class CorrelationFeatures:
                 self.df_corr.at[col_2, col_1] = np.nan
 
         # Variable for the filtered correlation matrix in DF
-        self.filtered_df=filtered_df
+        self.filtered_df = filtered_df
 
         # Variable for the choosen filter
         self.filter_option = {} if filter_option is None else filter_option
 
-    def filter_correlations(self, threshold_absolute_correlation: float) -> CorrelationFeatures:
+    def filter_correlations(
+        self, threshold_absolute_correlation: float
+    ) -> CorrelationFeatures:
 
         assert (
             threshold_absolute_correlation > 0
@@ -184,7 +189,7 @@ class CorrelationFeatures:
             df_input=self.df_input,
             dummies_dict=self.dummies_dict,
             filtered_df=self.filtered_df,
-            filter_option=self.filter_option
+            filter_option=self.filter_option,
         )
 
     def show_heat_map(self, filtered: Optional[bool] = True) -> None:
@@ -206,7 +211,7 @@ class CorrelationFeatures:
         """Show the correlation graph
 
         Args:
-            filtered (Optional[bool], optional): Whether to consider filtered correlation matrix. 
+            filtered (Optional[bool], optional): Whether to consider filtered correlation matrix.
                 Defaults to True.
         """
 
@@ -220,3 +225,57 @@ class CorrelationFeatures:
         adjacency_matrix = adjacency_matrix.to_numpy()
 
         show_graph_with_labels(adjacency_matrix, dict_labels, "eigenvector")
+
+
+# Feature selection
+
+
+class FeatureSelector:
+    """Class for feature selection"""
+
+    def __init__(
+        self, df: pd.DataFrame, target: str, num_feature_keep: Optional[int] = None
+    ) -> None:
+        """Initialization
+
+        Args:
+            df (pd.DataFrame): DF to be analyzed
+            target (str): Target column
+        """
+
+        self.df = df
+        self.target = target
+
+        self.num_feature_keep = num_feature_keep
+
+        # Create feature and target DF
+        self.df_target = self.df[target]
+        self.df_features = self.df.drop(columns=[target])
+
+        self.selector = SelectKBest(
+            f_classif,
+            k=self.num_feature_keep if self.num_feature_keep is not None else "all",
+        )  # k is the number of features to be selected
+
+        # Train the selector
+        self.selector.fit_transform(self.df_features, self.df_target)
+
+        support = self.selector.get_support()
+        self.features_names_selected = self.df_features.loc[:, support].columns.tolist()
+
+        # Create new DF by selected index
+        self.df_selected = self.df[[*self.features_names_selected, target]]
+
+        # Scores & P-Values
+        self.scores = self.selector.scores_
+        self.p_values = self.selector.pvalues_
+
+    @property
+    def result_table(self) -> pd.DataFrame:
+        """DF Containing scores and p_values of the columns"""
+        return pd.DataFrame(
+            zip(
+                self.df_features.columns, self.selector.scores_, self.selector.pvalues_
+            ),
+            columns=["column", "scores", "p_values"],
+        )
