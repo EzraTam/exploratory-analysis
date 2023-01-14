@@ -2,7 +2,8 @@
 of a DF
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
+from itertools import product
 import numpy as np
 import seaborn as sns
 import pandas as pd
@@ -11,7 +12,9 @@ import networkx as nx
 
 
 def show_corr_matrix_filtered(
-    df_input: pd.DataFrame, dummies_dict: Dict[str, List[str]]
+    df_input: pd.DataFrame,
+    dummies_dict: Dict[str, List[str]],
+    threshold_absolute_correlation: Optional[float] = 0.1,
 ) -> pd.DataFrame:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
@@ -21,17 +24,23 @@ def show_corr_matrix_filtered(
         dummies_dict (Dict[str,List[str]]): Dict with information of dummy columns
             resulting from one-hot-encoding. Form of dictionary:
                 column_one_hot_encoded: List of resulting columns
+        threshold_absolute_correlation: Threshold absolute value for filtering the correlation
 
     Returns:
         (pd.DataFrame): Resulting filtered Correlation matrix
     """
     df_corr = df_input.corr(numeric_only=True)
     for one_hot_cols in dummies_dict.values():
-        for col_1 in one_hot_cols:
-            for col_2 in one_hot_cols:
-                df_corr.at[col_1, col_2] = np.nan
-                df_corr.at[col_2, col_1] = np.nan
-    filtered_df = df_corr[((df_corr >= 0.1) | (df_corr <= -0.1)) & (df_corr != 1.000)]
+        for col_1, col_2 in product(one_hot_cols,one_hot_cols):
+            df_corr.at[col_1, col_2] = np.nan
+            df_corr.at[col_2, col_1] = np.nan
+    filtered_df = df_corr[
+        (
+            (df_corr >= threshold_absolute_correlation)
+            | (df_corr <= -threshold_absolute_correlation)
+        )
+        & (df_corr != 1.000)
+    ]
     filtered_df = filtered_df.dropna(how="all").dropna(axis=1, how="all")
     sns.set()
     plt.figure(figsize=(30, 10))
