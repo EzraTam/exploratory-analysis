@@ -1,22 +1,53 @@
 """Preprocessing Module
 """
 
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 import pandas as pd
 import exploratory_analysis.basic_functions as bf
 
 
-def transform_col_nm_to_snake(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Transform column names to snake case
+def transform_col_nm(
+    dataframe: pd.DataFrame,
+    how: str,
+    what: Optional[str] = None,
+    by: Optional[str] = None,
+) -> pd.DataFrame:
+    """Transform column names
 
     Args:
-        dataframe (pd.DataFrame): Input DF
+        dataframe (pd.DataFrame): DF to be transformed
+        how (str): By which method should the column names be transformed.
+            Existing methods:
+                'to_snake' - transform the column names to snake case
+                'replace' - replace a certain character in the column names by another character.
+                    Choosing this option requires changing the what and the by variables
+        what (str): Need to be specified if how == 'replace'.
+            Here you can specify which character in the column name should be replaced.
+        by (str): Need to be specified if how == 'replace'.
+            Here you can specify by which character the character specified in the variable what
+            in the column name should be replaced.
 
     Returns:
         pd.DataFrame: Output DF
     """
+
+    assert how in ["to_snake", "replace"], f"The method how={how} not yet implemented!"
+
+    if how == "replace":
+        assert (
+            what is not None
+        ), "Please specify in the variable what, which character should be replaced!"
+        assert (
+            what is not None
+        ), "Please specify in the variable by, by which character what should be replaced!"
+
+    transform_func = {
+        "to_snake": bf.snake_case,
+        "replace": lambda col: col.replace(what, by),
+    }[how]
+
     return dataframe.rename(
-        columns={col_nm: bf.snake_case(col_nm) for col_nm in dataframe.columns}
+        columns={col_nm: transform_func(col_nm) for col_nm in dataframe.columns}
     )
 
 
