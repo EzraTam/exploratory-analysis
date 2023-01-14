@@ -203,6 +203,12 @@ class CorrelationFeatures:
         plt.show()
 
     def show_correlation_graph(self, filtered: Optional[bool] = True):
+        """Show the correlation graph
+
+        Args:
+            filtered (Optional[bool], optional): Whether to consider filtered correlation matrix. 
+                Defaults to True.
+        """
 
         adjacency_matrix = self.filtered_df.fillna(0) if filtered else self.df_corr
 
