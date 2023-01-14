@@ -1,7 +1,7 @@
 """Python module for advanced analysis
 of a DF
 """
-
+from __future__ import annotations
 from typing import Dict, List, Optional
 from itertools import product
 import numpy as np
@@ -31,7 +31,7 @@ def show_corr_matrix_filtered(
     """
     df_corr = df_input.corr(numeric_only=True)
     for one_hot_cols in dummies_dict.values():
-        for col_1, col_2 in product(one_hot_cols,one_hot_cols):
+        for col_1, col_2 in product(one_hot_cols, one_hot_cols):
             df_corr.at[col_1, col_2] = np.nan
             df_corr.at[col_2, col_1] = np.nan
     filtered_df = df_corr[
@@ -119,3 +119,98 @@ def show_graph_with_labels(
         font_color="b",
     )
     plt.show()
+
+
+class CorrelationFeatures:
+    """Class for analyzing correlation between the features
+    in a DF
+    """
+
+    def __init__(
+        self,
+        df_input: pd.DataFrame,
+        dummies_dict: Dict[str, List[str]],
+        filtered_df: Optional[pd.DataFrame] = None,
+        filter_option: Optional[Dict[str,float]] = None
+    ) -> None:
+        """Initialization
+
+        Args:
+            df_input (pd.DataFrame): DF to be analyzed
+            dummies_dict (Dict[str, List[str]]): dummies_dict (Dict[str,List[str]]): Dict with information of dummy columns
+            resulting from one-hot-encoding. Form of dictionary:
+                key: column_one_hot_encoded
+                value: List of resulting columns
+        """
+
+        self.df_input=df_input
+        self.dummies_dict=dummies_dict
+
+        # Compute the correlation between the features
+        # The correlation between one-hot-encoded features will not be shown (a.k.a. set = nan)
+        self.df_corr = df_input.corr(numeric_only=True)
+        for one_hot_cols in dummies_dict.values():
+            for col_1, col_2 in product(one_hot_cols, one_hot_cols):
+                self.df_corr.at[col_1, col_2] = np.nan
+                self.df_corr.at[col_2, col_1] = np.nan
+
+        # Variable for the filtered correlation matrix in DF
+        self.filtered_df=filtered_df
+
+        # Variable for the choosen filter
+        self.filter_option = {} if filter_option is None else filter_option
+
+    def filter_correlations(self, threshold_absolute_correlation: float) -> CorrelationFeatures:
+
+        assert (
+            threshold_absolute_correlation > 0
+        ), "threshold_absolute correlation needs to be positive!"
+
+        self.filtered_df = self.df_corr[
+            (
+                (self.df_corr >= threshold_absolute_correlation)
+                | (self.df_corr <= -threshold_absolute_correlation)
+            )
+            & (self.df_corr != 1.000)
+        ]
+
+        self.filtered_df = self.filtered_df.dropna(how="all").dropna(axis=1, how="all")
+
+        self.filter_option[
+            "threshold_absolute_correlation"
+        ] = threshold_absolute_correlation
+
+        return CorrelationFeatures(
+            df_input=self.df_input,
+            dummies_dict=self.dummies_dict,
+            filtered_df=self.filtered_df,
+            filter_option=self.filter_option
+        )
+
+    def show_heat_map(self, filtered: Optional[bool] = True) -> None:
+
+        corr_to_be_plotted = self.filtered_df if filtered else self.df_corr
+
+        sns.set()
+        plt.figure(figsize=(30, 10))
+        sns.heatmap(
+            corr_to_be_plotted,
+            annot=True,
+            cmap="Reds",
+            linewidths=0.5,
+            linecolor="gray",
+        )
+        plt.show()
+
+    def show_correlation_graph(self, filtered: Optional[bool] = True):
+
+        adjacency_matrix = self.filtered_df.fillna(0) if filtered else self.df_corr
+
+        dict_labels = {
+            list(adjacency_matrix.columns).index(col): col
+            for col in list(adjacency_matrix.columns)
+        }
+
+        adjacency_matrix = adjacency_matrix.to_numpy()
+
+        show_graph_with_labels(adjacency_matrix, dict_labels, "eigenvector")
