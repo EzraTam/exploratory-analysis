@@ -57,7 +57,7 @@ def show_graph_with_labels(
     mylabels: Dict[int, str],
     centrality: str,
     figsize=(15, 15),
-    font_sizes=dict(node=10, edge=8),
+    font_sizes:Optional[Dict[str,int]]=None
 ) -> None:
     """Create a graph visualizing the correlation between features.
     Only correlations with absolute value > 0.1 are depicted.
@@ -75,6 +75,10 @@ def show_graph_with_labels(
             for node and edge
             Defaults to dict(node=10, edge=8).
     """
+    if font_sizes is None:
+        font_sizes = {"node":10, "edge":8}
+
+
     nodes = list(range(len(adjacency_matrix)))
     rows, cols = np.where(adjacency_matrix != 0)
     edges = zip(rows.tolist(), cols.tolist())
@@ -140,10 +144,11 @@ class CorrelationFeatures:
 
         Args:
             df_input (pd.DataFrame): DF to be analyzed
-            dummies_dict (Dict[str, List[str]]): dummies_dict (Dict[str,List[str]]): Dict with information of dummy columns
-            resulting from one-hot-encoding. Form of dictionary:
-                key: column_one_hot_encoded
-                value: List of resulting columns
+            dummies_dict (Dict[str, List[str]]): dummies_dict (Dict[str,List[str]]):
+                Dict with information of dummy columns
+                resulting from one-hot-encoding. Form of dictionary:
+                    key: column_one_hot_encoded
+                    value: List of resulting columns
         """
 
         self.df_input = df_input
@@ -166,6 +171,14 @@ class CorrelationFeatures:
     def filter_correlations(
         self, threshold_absolute_correlation: float
     ) -> CorrelationFeatures:
+        """Filter the correlation matrix given certain
+        threshold value.
+        Args:
+            threshold_absolute_correlation (float): Entries whose absolute
+                value > this value will be filtered out
+        Returns:
+            CorrelationFeatures: Class with filtered correlation matrix
+        """
 
         assert (
             threshold_absolute_correlation > 0
@@ -193,6 +206,12 @@ class CorrelationFeatures:
         )
 
     def show_heat_map(self, filtered: Optional[bool] = True) -> None:
+        """Function for plotting the correlation matrix as a heat map
+
+        Args:
+            filtered (Optional[bool], optional): Whether filtered or
+                unfiltered matrix should be plotted. Defaults to True.
+        """
 
         corr_to_be_plotted = self.filtered_df if filtered else self.df_corr
 
@@ -234,16 +253,18 @@ class FeatureSelector:
     """Class for feature selection"""
 
     def __init__(
-        self, df: pd.DataFrame, target: str, num_feature_keep: Optional[int] = None
+        self, df: pd.DataFrame, target: str, num_feature_keep: Optional[int] = None # pylint: disable=invalid-name
     ) -> None:
         """Initialization
 
         Args:
             df (pd.DataFrame): DF to be analyzed
             target (str): Target column
+            num_feature_keep (Optional[int], optional): Number of features to keep after selection.
+                Defaults to None.
         """
 
-        self.df = df
+        self.df = df # pylint: disable=invalid-name
         self.target = target
 
         self.num_feature_keep = num_feature_keep
@@ -252,6 +273,7 @@ class FeatureSelector:
         self.df_target = self.df[target]
         self.df_features = self.df.drop(columns=[target])
 
+        # Initiate the feature selector
         self.selector = SelectKBest(
             f_classif,
             k=self.num_feature_keep if self.num_feature_keep is not None else "all",
@@ -260,8 +282,13 @@ class FeatureSelector:
         # Train the selector
         self.selector.fit_transform(self.df_features, self.df_target)
 
-        support = self.selector.get_support()
-        self.features_names_selected = self.df_features.loc[:, support].columns.tolist()
+        # Get the index of the columns kept after applying the feature selector
+        self.support = self.selector.get_support()
+
+        # Extract the corresponding feature names
+        self.features_names_selected = self.df_features.loc[
+            :, self.support
+        ].columns.tolist()
 
         # Create new DF by selected index
         self.df_selected = self.df[[*self.features_names_selected, target]]

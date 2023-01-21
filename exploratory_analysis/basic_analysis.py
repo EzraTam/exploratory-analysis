@@ -7,7 +7,7 @@ from functools import reduce
 import pandas as pd
 
 
-def join_on_col(df_1: pd.DataFrame, df_2: pd.DataFrame, on: str) -> pd.DataFrame:
+def join_on_col(df_1: pd.DataFrame, df_2: pd.DataFrame, on_col: str) -> pd.DataFrame:
     """Function for joining two DFs
 
     Args:
@@ -19,7 +19,7 @@ def join_on_col(df_1: pd.DataFrame, df_2: pd.DataFrame, on: str) -> pd.DataFrame
         pd.DataFrame: Resulting DF
     """
     return pd.concat(
-        [df_1.set_index(on), df_2.set_index(on)], axis=1, join="inner"
+        [df_1.set_index(on_col), df_2.set_index(on_col)], axis=1, join="inner"
     ).reset_index()
 
 
@@ -61,26 +61,28 @@ def set_type_col_pd(
 
 
 def recurse_list_get_attribute_pd(
-    input: Union[pd.DataFrame, pd.Series], list_to_recurse: List[str]
+    input_data: Union[pd.DataFrame, pd.Series], list_to_recurse: List[str]
 ) -> pd.Series:
     """_summary_
 
     Args:
-        input (Union[pd.DataFrame, pd.Series]): _description_
-        list_to_recurse (List[str]): _description_
+        input_data (Union[pd.DataFrame, pd.Series]): Data to be processed by recursion of list
+        list_to_recurse (List[str]): List of methods to recurse on data
 
     Returns:
         pd.Series: _description_
     """
 
     if not list_to_recurse:
-        return input
+        return input_data
 
     attr = list_to_recurse[0]
-    fg_attr_method_type = isinstance(getattr(input, attr), MethodType)
+    fg_attr_method_type = isinstance(getattr(input_data, attr), MethodType)
 
     return recurse_list_get_attribute_pd(
-        input=getattr(input, attr)() if fg_attr_method_type else getattr(input, attr),
+        input_data=getattr(input_data, attr)()
+        if fg_attr_method_type
+        else getattr(input_data, attr),
         list_to_recurse=list_to_recurse[1:],
     )
 

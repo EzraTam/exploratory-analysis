@@ -4,3 +4,6 @@
 data
 notebooks/nkd_interview.ipynb
 .env
+notebooks/aether.ipynb
+notebooks/aether_analysis.ipynb
+notebooks/aether_data_cleaning.ipynb
