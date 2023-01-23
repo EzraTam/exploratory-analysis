@@ -4,9 +4,10 @@
 from collections import Counter
 from typing import Any, List, Tuple, Optional
 from matplotlib.axes import Axes
+import matplotlib.patheffects as path_effects
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
 from exploratory_analysis import basic_functions as bf
 
@@ -98,8 +99,8 @@ def plot_boxplots(
 
 
 class MultiIdxDF:
-    """Class for handling multi index DF
-    """
+    """Class for handling multi index DF"""
+
     def __init__(self, multi_idx_df: pd.DataFrame):
         bf.raise_error(
             (multi_idx_df.index.nlevels != 2),
@@ -129,8 +130,7 @@ class MultiIdxDF:
             which_col (str): Column to extract for each series
         """
         return [
-            self.multi_idx_df.xs(category)[which_col]
-            for category in self.categories
+            self.multi_idx_df.xs(category)[which_col] for category in self.categories
         ]
 
     def create_pie_chart(
@@ -192,3 +192,116 @@ def create_pie_chart_from_multi_idx_df(
         col_plotted=col_plotted,
         ordering_sub_category=ordering_sub_category,
     )
+
+
+def add_median_labels(ax: Axes, fmt=".1f"):
+    """Function to add median labels to a boxplot
+
+    Args:
+        ax (Axes): Axes with Boxplot
+        fmt (str, optional): Format of the displayed number. Defaults to '.1f'.
+    """
+    lines = ax.get_lines()
+    boxes = [c for c in ax.get_children() if type(c).__name__ == "PathPatch"]
+    lines_per_box = int(len(lines) / len(boxes))
+    for median in lines[4 : len(lines) : lines_per_box]:
+        x, y = (data.mean() for data in median.get_data())
+        # choose value depending on horizontal or vertical plot orientation
+        value = x if (median.get_xdata()[1] - median.get_xdata()[0]) == 0 else y
+        text = ax.text(
+            x,
+            y,
+            f"{value:{fmt}}",
+            ha="center",
+            va="center",
+            fontweight="bold",
+            color="white",
+        )
+        # create median-colored border around white text for contrast
+        text.set_path_effects(
+            [
+                path_effects.Stroke(linewidth=3, foreground=median.get_color()),
+                path_effects.Normal(),
+            ]
+        )
+
+
+def plot_box_count(
+    df_to_visualize: pd.DataFrame,
+    x_category: str,
+    y_quantity: str,
+    legend_category: str,
+    stat_xlabel: Optional[str] = None,
+    stat_ylabel: Optional[str] = None,
+    sup_title: Optional[str] = None,
+):
+    """Function to plot the boxplot of data and the corresponding count
+
+    Args:
+        df_to_visualize (pd.DataFrame): DF to be analyzed
+        x_category (str): Category of the boxes on the x-axis
+        y_quantity (str): Quantity to be analyzed - specify the y-axis of the data
+        legend_category (str): Category for the legend a.k.a hue
+        stat_xlabel (Optional[str], optional): Label of the x-axis. Defaults to None.
+        stat_ylabel (Optional[str], optional): Label of the y-axis. Defaults to None.
+        sup_title (Optional[str], optional): Title of the plot. Defaults to None.
+    """
+
+    # Create subaxes
+    fig, axs = plt.subplots(
+        nrows=2, gridspec_kw={"height_ratios": [3, 0.5]}, figsize=(30, 15)
+    )
+
+    if sup_title:
+        fig.suptitle(sup_title, fontsize=25, fontweight="bold")
+
+    # Configuration for mean visualization
+    mean = {
+        "showmeans": True,
+        "meanprops": {
+            "marker": "o",
+            "markerfacecolor": "white",
+            "markeredgecolor": "black",
+            "markersize": "4",
+        },
+    }
+
+    box_plot = sns.boxplot(
+        data=df_to_visualize,
+        x=x_category,
+        y=y_quantity,
+        hue=legend_category,
+        showfliers=False,
+        **mean,
+        ax=axs[0],
+    )
+
+    add_median_labels(box_plot)
+
+    if stat_xlabel is not None:
+        box_plot.set_xlabel(stat_xlabel)
+
+    if stat_ylabel is not None:
+        box_plot.set_ylabel(stat_ylabel)
+
+    df_count = (
+        df_to_visualize.groupby([legend_category, x_category], as_index=False)[
+            y_quantity
+        ]
+        .count()
+        .rename(columns={y_quantity: "Number Data"})
+    )
+    count_plot = sns.barplot(
+        data=df_count, x=x_category, y="Number Data", hue=legend_category, ax=axs[1]
+    )
+
+    # Add values to the bars
+    for i in count_plot.containers:
+        count_plot.bar_label(
+            i,
+        )
+
+    # Delete legend - Need a more elegant solution, e.g. create legend for both plots
+    count_plot.get_legend().remove()
+
+    plt.show()
