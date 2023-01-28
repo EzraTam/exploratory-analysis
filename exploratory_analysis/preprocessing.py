@@ -174,15 +174,38 @@ def create_time_cols(df:pd.DataFrame, time_col:str, to_create: Union[List[str],s
         }[method_extract]
     return df
 
+def concate_columns(df: pd.DataFrame, columns: List[str], new_col_nm: str)-> pd.DataFrame:
+    """Concatenate two columns into one as a dict with the first column as key
+    and second column as value
+
+    Args:
+        df (pd.DataFrame): DF to process
+        columns (List[str]): Columns to concate
+        new_col_nm (str): Name of the resulting column
+
+    Returns:
+        pd.DataFrame: Result
+    """
+    list_df_cols=[df[col] for col in columns]
+    df[new_col_nm] = [(key,val) for key, val in zip(*list_df_cols)]
+    return df
+
 def pad_complete_cat_value(df: pd.DataFrame, group_col:str, cat_col:str, value_for_completion:Optional[Union[int,float]]=0)->pd.DataFrame:
+    """Complete df by non-existing subitems in a group. We assign then a default value for the non-existing items
+
+    Args:
+        df (pd.DataFrame): DF to process
+        group_col (str): Column name of the group
+        cat_col (str): Column name of the item
+        value_for_completion (Optional[Union[int,float]], optional): Which value to be assigned if non-existent. Defaults to 0.
+
+    Returns:
+        pd.DataFrame: Resulting DF
+    """
 
     df_group_cat_complete = pd.DataFrame(
         list(product(df[group_col].unique(), df[cat_col].unique())),
         columns=[group_col, cat_col])
     return df.merge(df_group_cat_complete,on=[group_col,cat_col], how='right').fillna(value_for_completion)
 
-def concate_columns(df: pd.DataFrame, columns: List[str], new_col_nm: str):
-    list_df_cols=[df[col] for col in columns]
-    df[new_col_nm] = [(key,val) for key, val in zip(*list_df_cols)]
-    return df
 
