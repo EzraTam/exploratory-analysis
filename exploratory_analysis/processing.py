@@ -60,7 +60,10 @@ def group_and_fill(
 
     return _df.merge(_df_additional, on=cat_nm)
 
-def separate_df_by_cat(df: pd.DataFrame,cat:str)->Dict[Union[str,int,float],pd.DataFrame]:
+
+def separate_df_by_cat(
+    df: pd.DataFrame, cat: str
+) -> Dict[Union[str, int, float], pd.DataFrame]:
     """Separate DF by categories
 
     Args:
@@ -81,7 +84,15 @@ def separate_df_by_cat(df: pd.DataFrame,cat:str)->Dict[Union[str,int,float],pd.D
 
     return dict_df
 
-def compute_stat_aggregate(df: pd.DataFrame, cats: List[str], data_distinguisher: str, col_val: str, aggregator: str, stat_method: str)->pd.DataFrame:
+
+def compute_stat_aggregate(
+    df: pd.DataFrame,
+    cats: List[str],
+    data_distinguisher: str,
+    col_val: str,
+    aggregator: str,
+    stat_method: str,
+) -> pd.DataFrame:
     """Aggregate data then compute stats
 
     Args:
@@ -97,23 +108,18 @@ def compute_stat_aggregate(df: pd.DataFrame, cats: List[str], data_distinguisher
     """
     # Group data respective to a distinguisher
     _df = getattr(
-        df.groupby([*cats, *data_distinguisher], as_index=False)[
-            col_val
-        ],
+        df.groupby([*cats, *data_distinguisher], as_index=False)[col_val],
         aggregator,
     )()
 
     # Compute statistics respective to the desired columns and row categories
-    _df = getattr(
-        _df.groupby(cats)[col_val], stat_method
-    )()
+    _df = getattr(_df.groupby(cats)[col_val], stat_method)()
 
     # Formatting the numbers
-    _df = _df.apply(
-        lambda x: str(int(x)) if x.is_integer() else x
-        )
-    
+    _df = _df.apply(lambda x: str(int(x)) if x.is_integer() else x)
+
     return _df
+
 
 def stat_agg(
     df: pd.DataFrame,
@@ -166,34 +172,43 @@ def stat_agg(
     )
 
     # Initialize the tables in a dict
-    results = separate_df_by_cat(df=df,cat=cat_tables)
+    results = separate_df_by_cat(df=df, cat=cat_tables)
 
     # Needed in order to handle the possibility of string and list of strings input
     if isinstance(data_distinguisher, str):
         data_distinguisher = [data_distinguisher]
 
-    results=map(
-        lambda x:
-            ( x[0],
-                compute_stat_aggregate(
-                    df=x[1],
-                    cats=[cat_columns,cat_rows], data_distinguisher=data_distinguisher,col_val=col_data,
-                    aggregator=aggregator,stat_method=stat_method
-                )
+    results = map(
+        lambda x: (
+            x[0],
+            compute_stat_aggregate(
+                df=x[1],
+                cats=[cat_columns, cat_rows],
+                data_distinguisher=data_distinguisher,
+                col_val=col_data,
+                aggregator=aggregator,
+                stat_method=stat_method,
             ),
-        results.items()
-        )
+        ),
+        results.items(),
+    )
 
     # Unstack multi index pandas series to multi index DF
-    dict_to_list_df=map(lambda dict_item: pd.DataFrame(dict_item[1].rename(dict_item[0])),results)
+    dict_to_list_df = map(
+        lambda dict_item: pd.DataFrame(dict_item[1].rename(dict_item[0])), results
+    )
 
     # Add the DFs
-    result_df=reduce(lambda x,y: x.join(y, how= "outer"), dict_to_list_df).unstack(level=0).fillna(nan_name)
+    result_df = (
+        reduce(lambda x, y: x.join(y, how="outer"), dict_to_list_df)
+        .unstack(level=0)
+        .fillna(nan_name)
+    )
 
     # # Make adjustment for display
     result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
     result_df.index = result_df.index.set_names(cat_columns_name)
     if order_cat_columns is not None:
-        result_df=result_df.reindex(columns=order_cat_columns, level=1)
+        result_df = result_df.reindex(columns=order_cat_columns, level=1)
 
     return result_df
