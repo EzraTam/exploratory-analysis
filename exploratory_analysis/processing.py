@@ -151,12 +151,12 @@ def stat_agg(
     dict_to_list_df=map(lambda dict_item: pd.DataFrame(dict_item[1].rename(dict_item[0])),results.items())
 
     # Add the DFs
-    result_df=reduce(lambda x,y: x.join(y), dict_to_list_df).unstack(level=0).fillna(nan_name)
+    result_df=reduce(lambda x,y: x.join(y, how= "outer"), dict_to_list_df).unstack(level=0).fillna(nan_name)
 
-    # Make adjustment for display
+    # # Make adjustment for display
     result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
     result_df.index = result_df.index.set_names(cat_columns_name)
     if order_cat_columns is not None:
-        result_df.reindex(columns=order_cat_columns, level=1)
+        result_df=result_df.reindex(columns=order_cat_columns, level=1)
 
     return result_df
