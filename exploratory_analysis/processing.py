@@ -1,3 +1,9 @@
+"""
+Module for processing data.
+Functionalities:
+    * Show statistics by grouping
+"""
+
 from typing import List, Dict, Union, Optional
 import pandas as pd
 
@@ -15,6 +21,7 @@ def stat_agg(
     cat_rows_name: Optional[str] = None,
     quantity_name: Optional[str] = None,
     nan_name: Optional[str] = "No Data",
+    order_cat_columns: Optional[str] = None
 ) -> Dict[Union[str, int, float], pd.DataFrame]:
     """
     Statistically aggregate data respective two three categories:
@@ -91,8 +98,12 @@ def stat_agg(
 
         # Set the display names
         _result.columns = _result.columns.set_levels([quantity_name], level=0)
-        _result.columns = _result.columns.set_names(cat_columns_name, level=1)
-        _result.index = _result.index.set_names(cat_rows_name)
+        _result.columns = _result.columns.set_names(cat_rows_name, level=1)
+        _result.index = _result.index.set_names(cat_columns_name)
+
+        if order_cat_columns is not None:
+            _result.reindex(columns=order_cat_columns, level=1)
+
 
         results[cat_tables_choice] = _result
 
