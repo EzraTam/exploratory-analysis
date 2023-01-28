@@ -98,8 +98,8 @@ def stat_agg(
 
         # Set the display names
         _result.columns = _result.columns.set_levels([quantity_name], level=0)
-        _result.columns = _result.columns.set_names(cat_rows_name, level=1)
-        _result.index = _result.index.set_names(cat_columns_name)
+        _result.columns = _result.columns.set_names(cat_columns_name, level=1)
+        _result.index = _result.index.set_names(cat_rows_name)
 
         if order_cat_columns is not None:
             _result.reindex(columns=order_cat_columns, level=1)
