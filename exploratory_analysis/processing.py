@@ -6,6 +6,58 @@ Functionalities:
 
 from typing import List, Dict, Union, Optional
 import pandas as pd
+from exploratory_analysis.preprocessing import pad_complete_cat_value
+
+
+def group_and_fill(
+    df: pd.DataFrame,
+    cat_nm: str,
+    sub_cat_nm: str,
+    cols_values: List[str],
+    value_for_completion: Union[str, int, float],
+    aggregator: str,
+    additional_columns: Union[List[str], str],
+) -> pd.DataFrame:
+    """Group a data frame respective a category then fill the category with complete list of subcategories
+
+    Args:
+        df (pd.DataFrame): DF to be processed
+        cat_nm (str): Category column name
+        sub_cat_nm (str): Subcategory column names
+        cols_values (List[str]): Column names of the values to aggregate
+        value_for_completion (Union[str,int,float]): Default values for the missing subcategories
+        aggregator (str): Aggregation method
+        additional_columns (Union[List[str],str]): additional columns to add to the result table from the original table.
+            Need to be 1-1 to the cat_nm column
+
+    Returns:
+        pd.DataFrame: _description_‚
+    """
+
+    additional_columns = (
+        [additional_columns]
+        if isinstance(additional_columns, str)
+        else additional_columns
+    )
+
+    # Check whether additional columns is 1-1 to cat_nm
+    _df_additional = df[[*additional_columns, cat_nm]].drop_duplicates()
+
+    assert (
+        _df_additional.groupby(cat_nm).nunique().max().max() == 1
+    ), f"the additional columns {additional_columns} are not 1-1 to cat_nm {cat_nm}"
+
+    _df = getattr(
+        df.groupby([cat_nm, sub_cat_nm], as_index=False)[cols_values], aggregator
+    )()
+    _df = pad_complete_cat_value(
+        df=_df,
+        group_col=cat_nm,
+        cat_col=sub_cat_nm,
+        value_for_completion=value_for_completion,
+    )
+
+    return _df.merge(_df_additional, on=cat_nm)
 
 
 def stat_agg(
@@ -21,7 +73,7 @@ def stat_agg(
     cat_rows_name: Optional[str] = None,
     quantity_name: Optional[str] = None,
     nan_name: Optional[str] = "No Data",
-    order_cat_columns: Optional[str] = None
+    order_cat_columns: Optional[str] = None,
 ) -> Dict[Union[str, int, float], pd.DataFrame]:
     """
     Statistically aggregate data respective two three categories:
@@ -103,7 +155,6 @@ def stat_agg(
 
         if order_cat_columns is not None:
             _result.reindex(columns=order_cat_columns, level=1)
-
 
         results[cat_tables_choice] = _result
 
