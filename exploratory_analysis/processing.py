@@ -5,6 +5,7 @@ Functionalities:
 """
 
 from typing import List, Dict, Union, Optional
+from functools import reduce
 import pandas as pd
 from exploratory_analysis.preprocessing import pad_complete_cat_value
 
@@ -59,7 +60,6 @@ def group_and_fill(
 
     return _df.merge(_df_additional, on=cat_nm)
 
-
 def stat_agg(
     df: pd.DataFrame,
     cat_tables: str,
@@ -74,7 +74,7 @@ def stat_agg(
     quantity_name: Optional[str] = None,
     nan_name: Optional[str] = "No Data",
     order_cat_columns: Optional[str] = None,
-) -> Dict[Union[str, int, float], pd.DataFrame]:
+) -> pd.DataFrame:
     """
     Statistically aggregate data respective two three categories:
         * First the data is grouped by the categories and additional data_distinguisher feature
@@ -99,7 +99,7 @@ def stat_agg(
         nan_name (Optional[str], optional): _description_. Defaults to "No Data".
 
     Returns:
-        Dict[str,pd.DataFrame]: Dict of tables with key equal to subcategories in cat tables
+        pd.DataFrame: Multiindex DF
     """
 
     cat_columns_name = cat_columns if cat_columns_name is None else cat_columns_name
@@ -145,17 +145,18 @@ def stat_agg(
             lambda x: str(int(x)) if x.is_integer() else x
         )
 
-        # From a multiindex to a row-column table and rename nan values
-        _result = pd.DataFrame(_df_number_data).unstack(level=0).fillna(nan_name)
+        results[cat_tables_choice] = _df_number_data
 
-        # Set the display names
-        _result.columns = _result.columns.set_levels([quantity_name], level=0)
-        _result.columns = _result.columns.set_names(cat_rows_name, level=1)
-        _result.index = _result.index.set_names(cat_columns_name)
+    # Unstack multi index pandas series to multi index DF
+    dict_to_list_df=map(lambda dict_item: pd.DataFrame(dict_item[1].rename(dict_item[0])),results.items())
 
-        if order_cat_columns is not None:
-            _result.reindex(columns=order_cat_columns, level=1)
+    # Add the DFs
+    result_df=reduce(lambda x,y: x.join(y), dict_to_list_df).unstack(level=0).fillna(nan_name)
 
-        results[cat_tables_choice] = _result
+    # Make adjustment for display
+    result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
+    result_df.index = result_df.index.set_names(cat_columns_name)
+    if order_cat_columns is not None:
+        result_df.reindex(columns=order_cat_columns, level=1)
 
-    return results
+    return result_df
