@@ -60,6 +60,61 @@ def group_and_fill(
 
     return _df.merge(_df_additional, on=cat_nm)
 
+def separate_df_by_cat(df: pd.DataFrame,cat:str)->Dict[Union[str,int,float],pd.DataFrame]:
+    """Separate DF by categories
+
+    Args:
+        df (pd.DataFrame): DF to process
+        cat (str): category column name
+
+    Returns:
+        Dict[Union[str,int,float],pd.DataFrame]: Result Dict
+    """
+    # Collect possible subcategories of cat_tables in DF
+    cat_elements = df[cat].unique()
+
+    # Initialize the tables in a dict
+    dict_df = {
+        cat_choice: df[df[cat] == cat_choice].reset_index(drop=True).drop(columns=[cat])
+        for cat_choice in cat_elements
+    }
+
+    return dict_df
+
+def compute_stat_aggregate(df: pd.DataFrame, cats: List[str], data_distinguisher: str, col_val: str, aggregator: str, stat_method: str)->pd.DataFrame:
+    """Aggregate data then compute stats
+
+    Args:
+        df (pd.DataFrame): DF to be processed
+        cats (List[str]): Categories for which statistics are computed
+        data_distinguisher (str): distinguisher of the data. Aggregation is respective to this columns
+        col_val (str): Columns containing values to be analyzed
+        aggregator (str): Method for aggregation
+        stat_method (str): Method for statistics
+
+    Returns:
+        pd. DataFrame: Result DF
+    """
+    # Group data respective to a distinguisher
+    _df = getattr(
+        df.groupby([*cats, *data_distinguisher], as_index=False)[
+            col_val
+        ],
+        aggregator,
+    )()
+
+    # Compute statistics respective to the desired columns and row categories
+    _df = getattr(
+        _df.groupby(cats)[col_val], stat_method
+    )()
+
+    # Formatting the numbers
+    _df = _df.apply(
+        lambda x: str(int(x)) if x.is_integer() else x
+        )
+    
+    return _df
+
 def stat_agg(
     df: pd.DataFrame,
     cat_tables: str,
@@ -110,45 +165,27 @@ def stat_agg(
         else quantity_name
     )
 
-    # Collect possible subcategories of cat_tables in DF
-    cat_tables_elements = df[cat_tables].unique()
-
     # Initialize the tables in a dict
-    results = {
-        cat_tables_choice: df[df[cat_tables] == cat_tables_choice]
-        for cat_tables_choice in cat_tables_elements
-    }
+    results = separate_df_by_cat(df=df,cat=cat_tables)
 
     # Needed in order to handle the possibility of string and list of strings input
     if isinstance(data_distinguisher, str):
         data_distinguisher = [data_distinguisher]
 
-    for cat_tables_choice in cat_tables_elements:
-
-        _df = results[cat_tables_choice]
-
-        # Group data respective to a distinguisher
-        _df_number_data = getattr(
-            _df.groupby([cat_columns, cat_rows, *data_distinguisher], as_index=False)[
-                col_data
-            ],
-            aggregator,
-        )()
-
-        # Compute statistics respective to the desired columns and row categories
-        _df_number_data = getattr(
-            _df_number_data.groupby([cat_columns, cat_rows])[col_data], stat_method
-        )()
-
-        # Formatting the numbers
-        _df_number_data = _df_number_data.apply(
-            lambda x: str(int(x)) if x.is_integer() else x
+    results=map(
+        lambda x:
+            ( x[0],
+                compute_stat_aggregate(
+                    df=x[1],
+                    cats=[cat_columns,cat_rows], data_distinguisher=data_distinguisher,col_val=col_data,
+                    aggregator=aggregator,stat_method=stat_method
+                )
+            ),
+        results.items()
         )
 
-        results[cat_tables_choice] = _df_number_data
-
     # Unstack multi index pandas series to multi index DF
-    dict_to_list_df=map(lambda dict_item: pd.DataFrame(dict_item[1].rename(dict_item[0])),results.items())
+    dict_to_list_df=map(lambda dict_item: pd.DataFrame(dict_item[1].rename(dict_item[0])),results)
 
     # Add the DFs
     result_df=reduce(lambda x,y: x.join(y, how= "outer"), dict_to_list_df).unstack(level=0).fillna(nan_name)
