@@ -3,6 +3,7 @@
 
 from typing import List, Dict, Union, Optional
 import pandas as pd
+from itertools import product
 import exploratory_analysis.basic_functions as bf
 
 
@@ -142,3 +143,46 @@ def drop_and_one_hot(
         dummies_dict[feat] = list(dummies_df.columns)
         df_result = df_result.join(dummies_df)
     return dict(df_result=df_result, dummies_dict=dummies_dict)
+
+
+def create_time_cols(df:pd.DataFrame, time_col:str, to_create: Union[List[str],str], new_col_names: Optional[List[str]]=None)->pd.DataFrame:
+    """Create additional time columns from a date_time column of a pandas DF
+    Args:
+        df (pd.DataFrame): DF to process
+        time_col (str): Time column to be extracted from
+        to_create (Union[List[str],str]): Columns to extract.
+            Choices are: ["day_name","month","year","week","hour","day","month_year"]
+        new_col_names (Optional[List[str]], optional): List of new column names. Defaults to None.
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    
+    if to_create == "all":
+        to_create=["day_name","month","year","week","hour","day","month_year"]
+    if new_col_names is None:
+        new_col_names=to_create
+    for method_extract,new_col_name in zip(to_create,new_col_names): 
+        df[new_col_name]={
+            "day_name": df[time_col].dt.day_name(),
+            "month": df[time_col].dt.month,
+            "year": df[time_col].dt.year,
+            "week": df[time_col].apply(lambda x: x.isocalendar()[1]),
+            "hour": df[time_col].dt.hour,
+            "day": df[time_col].apply(lambda x: x.timetuple().tm_yday),
+            "month_year": df[time_col].dt.strftime("%b %Y")
+        }[method_extract]
+    return df
+
+def pad_complete_cat_value(df: pd.DataFrame, group_col:str, cat_col:str, value_for_completion:Optional[Union[int,float]]=0)->pd.DataFrame:
+
+    df_group_cat_complete = pd.DataFrame(
+        list(product(df[group_col].unique(), df[cat_col].unique())),
+        columns=[group_col, cat_col])
+    return df.merge(df_group_cat_complete,on=[group_col,cat_col], how='right').fillna(value_for_completion)
+
+def concate_columns(df: pd.DataFrame, columns: List[str], new_col_nm: str):
+    list_df_cols=[df[col] for col in columns]
+    df[new_col_nm] = [(key,val) for key, val in zip(*list_df_cols)]
+    return df
+

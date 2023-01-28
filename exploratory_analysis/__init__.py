@@ -4,3 +4,4 @@ from .basic_functions import *
 from .import_data import *
 from .preprocessing import *
 from .visualization import *
+from .query_language import *
