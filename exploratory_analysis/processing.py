@@ -7,7 +7,7 @@ Functionalities:
 from typing import List, Dict, Union, Optional
 from functools import reduce
 import pandas as pd
-from exploratory_analysis.preprocessing import pad_complete_cat_value
+from exploratory_analysis.preprocessing import pad_complete_cat_value, concate_columns
 
 
 def group_and_fill(
@@ -212,3 +212,62 @@ def stat_agg(
         result_df = result_df.reindex(columns=order_cat_columns, level=1)
 
     return result_df
+
+
+def _to_int(val: float) -> Union[int, float]:
+    return int(val) if val.is_integer() else val
+
+
+def agg_cat_stat_in_cells(
+    df: pd.DataFrame,
+    cat_tables: str,
+    cat_row: str,
+    cat_col: str,
+    cat_in_cell_col: str,
+    col_val: str,
+    stat_method: str,
+) -> pd.DataFrame:
+    _df = getattr(
+        df.groupby([cat_tables, cat_col, cat_row, cat_in_cell_col], as_index=False)[
+            col_val
+        ],
+        stat_method,
+    )()
+
+    _dict_df = separate_df_by_cat(df=_df, cat=cat_tables)
+
+    _li_df_concated = map(
+        lambda x: (x[0], x[1][x[1][col_val] > 0].reset_index(drop=True)),
+        _dict_df.items(),
+    )
+
+    _li_df_concated = map(
+        lambda x: (
+            x[0],
+            concate_columns(x[1], [cat_in_cell_col, col_val], x[0]).drop(
+                columns=[cat_in_cell_col, col_val]
+            ),
+        ),
+        _li_df_concated,
+    )
+
+    _li_df_concated = map(
+        lambda x: x[1].groupby([cat_col, cat_row])[x[0]].apply(list), _li_df_concated
+    )
+
+    _li_df_concated = [
+        _df_concated.apply(lambda x: list(map(lambda y: f"{y[0]}: {_to_int(y[1])}", x)))
+        for _df_concated in _li_df_concated
+    ]
+
+    _li_df_concated = [
+        _df_concated.apply(lambda x: " , ".join(x)) for _df_concated in _li_df_concated
+    ]
+
+    _li_df_concated = [
+        pd.DataFrame(_df_concated).unstack(level=0) for _df_concated in _li_df_concated
+    ]
+
+    return reduce(lambda x, y: x.join(y, how="outer"), _li_df_concated).fillna(
+        "No Data"
+    )
