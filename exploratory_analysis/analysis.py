@@ -57,7 +57,7 @@ def show_graph_with_labels(
     mylabels: Dict[int, str],
     centrality: str,
     figsize=(15, 15),
-    font_sizes:Optional[Dict[str,int]]=None
+    font_sizes: Optional[Dict[str, int]] = None,
 ) -> None:
     """Create a graph visualizing the correlation between features.
     Only correlations with absolute value > 0.1 are depicted.
@@ -76,8 +76,7 @@ def show_graph_with_labels(
             Defaults to dict(node=10, edge=8).
     """
     if font_sizes is None:
-        font_sizes = {"node":10, "edge":8}
-
+        font_sizes = {"node": 10, "edge": 8}
 
     nodes = list(range(len(adjacency_matrix)))
     rows, cols = np.where(adjacency_matrix != 0)
@@ -253,7 +252,10 @@ class FeatureSelector:
     """Class for feature selection"""
 
     def __init__(
-        self, df: pd.DataFrame, target: str, num_feature_keep: Optional[int] = None # pylint: disable=invalid-name
+        self,
+        df: pd.DataFrame,
+        target: str,
+        num_feature_keep: Optional[int] = None,  # pylint: disable=invalid-name
     ) -> None:
         """Initialization
 
@@ -264,7 +266,7 @@ class FeatureSelector:
                 Defaults to None.
         """
 
-        self.df = df # pylint: disable=invalid-name
+        self.df = df  # pylint: disable=invalid-name
         self.target = target
 
         self.num_feature_keep = num_feature_keep

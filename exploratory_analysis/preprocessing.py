@@ -93,7 +93,7 @@ def year_month_day_col(dataframe: pd.DataFrame, col: str) -> pd.DataFrame:
 
 
 def one_hot_encode(
-    df_input: pd.DataFrame, li_one_hot: List[str], drop: Optional[bool]=True
+    df_input: pd.DataFrame, li_one_hot: List[str], drop: Optional[bool] = True
 ) -> Dict[str, Union[pd.DataFrame, Dict[str, List[str]]]]:
     """Drop and one hot encode columns of a dataframe
     Args:
@@ -115,7 +115,7 @@ def one_hot_encode(
         dummies_dict[feat] = list(dummies_df.columns)
         df_result = df_result.join(dummies_df)
     if drop:
-        df_result=df_result.drop(columns=li_one_hot)
+        df_result = df_result.drop(columns=li_one_hot)
     return dict(df_result=df_result, dummies_dict=dummies_dict)
 
 
@@ -145,7 +145,12 @@ def drop_and_one_hot(
     return dict(df_result=df_result, dummies_dict=dummies_dict)
 
 
-def create_time_cols(df:pd.DataFrame, time_col:str, to_create: Union[List[str],str], new_col_names: Optional[List[str]]=None)->pd.DataFrame:
+def create_time_cols(
+    df: pd.DataFrame,
+    time_col: str,
+    to_create: Union[List[str], str],
+    new_col_names: Optional[List[str]] = None,
+) -> pd.DataFrame:
     """Create additional time columns from a date_time column of a pandas DF
     Args:
         df (pd.DataFrame): DF to process
@@ -157,24 +162,27 @@ def create_time_cols(df:pd.DataFrame, time_col:str, to_create: Union[List[str],s
     Returns:
         pd.DataFrame: _description_
     """
-    
+
     if to_create == "all":
-        to_create=["day_name","month","year","week","hour","day","month_year"]
+        to_create = ["day_name", "month", "year", "week", "hour", "day", "month_year"]
     if new_col_names is None:
-        new_col_names=to_create
-    for method_extract,new_col_name in zip(to_create,new_col_names): 
-        df[new_col_name]={
+        new_col_names = to_create
+    for method_extract, new_col_name in zip(to_create, new_col_names):
+        df[new_col_name] = {
             "day_name": df[time_col].dt.day_name(),
             "month": df[time_col].dt.month,
             "year": df[time_col].dt.year,
             "week": df[time_col].apply(lambda x: x.isocalendar()[1]),
             "hour": df[time_col].dt.hour,
             "day": df[time_col].apply(lambda x: x.timetuple().tm_yday),
-            "month_year": df[time_col].dt.strftime("%b %Y")
+            "month_year": df[time_col].dt.strftime("%b %Y"),
         }[method_extract]
     return df
 
-def concate_columns(df: pd.DataFrame, columns: List[str], new_col_nm: str)-> pd.DataFrame:
+
+def concate_columns(
+    df: pd.DataFrame, columns: List[str], new_col_nm: str
+) -> pd.DataFrame:
     """Concatenate two columns into one as a dict with the first column as key
     and second column as value
 
@@ -186,11 +194,17 @@ def concate_columns(df: pd.DataFrame, columns: List[str], new_col_nm: str)-> pd.
     Returns:
         pd.DataFrame: Result
     """
-    list_df_cols=[df[col] for col in columns]
-    df[new_col_nm] = [(key,val) for key, val in zip(*list_df_cols)]
+    list_df_cols = [df[col] for col in columns]
+    df[new_col_nm] = [(key, val) for key, val in zip(*list_df_cols)]
     return df
 
-def pad_complete_cat_value(df: pd.DataFrame, group_col:str, cat_col:str, value_for_completion:Optional[Union[int,float]]=0)->pd.DataFrame:
+
+def pad_complete_cat_value(
+    df: pd.DataFrame,
+    group_col: str,
+    cat_col: str,
+    value_for_completion: Optional[Union[int, float]] = 0,
+) -> pd.DataFrame:
     """Complete df by non-existing subitems in a group. We assign then a default value for the non-existing items
 
     Args:
@@ -205,7 +219,8 @@ def pad_complete_cat_value(df: pd.DataFrame, group_col:str, cat_col:str, value_f
 
     df_group_cat_complete = pd.DataFrame(
         list(product(df[group_col].unique(), df[cat_col].unique())),
-        columns=[group_col, cat_col])
-    return df.merge(df_group_cat_complete,on=[group_col,cat_col], how='right').fillna(value_for_completion)
-
-
+        columns=[group_col, cat_col],
+    )
+    return df.merge(df_group_cat_complete, on=[group_col, cat_col], how="right").fillna(
+        value_for_completion
+    )

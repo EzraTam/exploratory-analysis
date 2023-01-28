@@ -1,14 +1,21 @@
 from typing import List, Dict, Union, Optional
 import pandas as pd
 
+
 def stat_agg(
-    df:pd.DataFrame, 
-    cat_tables:str, cat_rows:str, cat_columns:str, 
-    data_distinguisher: Union[str,List[str]], col_data: str, 
-    aggregator:str, stat_method:str, 
-    cat_columns_name: Optional[str]=None, cat_rows_name: Optional[str]=None, quantity_name: Optional[str]=None,
-    nan_name: Optional[str] = "No Data"
-    )->Dict[Union[str,int,float],pd.DataFrame]:
+    df: pd.DataFrame,
+    cat_tables: str,
+    cat_rows: str,
+    cat_columns: str,
+    data_distinguisher: Union[str, List[str]],
+    col_data: str,
+    aggregator: str,
+    stat_method: str,
+    cat_columns_name: Optional[str] = None,
+    cat_rows_name: Optional[str] = None,
+    quantity_name: Optional[str] = None,
+    nan_name: Optional[str] = "No Data",
+) -> Dict[Union[str, int, float], pd.DataFrame]:
     """
     Statistically aggregate data respective two three categories:
         * First the data is grouped by the categories and additional data_distinguisher feature
@@ -38,39 +45,55 @@ def stat_agg(
 
     cat_columns_name = cat_columns if cat_columns_name is None else cat_columns_name
     cat_rows_name = cat_rows if cat_rows_name is None else cat_rows_name
-    quantity_name = f"{stat_method} {col_data} per {data_distinguisher} ({aggregator})" if quantity_name is None else quantity_name
-    
+    quantity_name = (
+        f"{stat_method} {col_data} per {data_distinguisher} ({aggregator})"
+        if quantity_name is None
+        else quantity_name
+    )
+
     # Collect possible subcategories of cat_tables in DF
-    cat_tables_elements= df[cat_tables].unique()
+    cat_tables_elements = df[cat_tables].unique()
 
     # Initialize the tables in a dict
-    results={cat_tables_choice: df[df[cat_tables]==cat_tables_choice] for cat_tables_choice in cat_tables_elements}
+    results = {
+        cat_tables_choice: df[df[cat_tables] == cat_tables_choice]
+        for cat_tables_choice in cat_tables_elements
+    }
 
     # Needed in order to handle the possibility of string and list of strings input
     if isinstance(data_distinguisher, str):
-        data_distinguisher=[data_distinguisher]
+        data_distinguisher = [data_distinguisher]
 
     for cat_tables_choice in cat_tables_elements:
 
-        _df=results[cat_tables_choice]
+        _df = results[cat_tables_choice]
 
         # Group data respective to a distinguisher
-        _df_number_data=getattr(_df.groupby([cat_columns,cat_rows,*data_distinguisher],as_index=False)[col_data],aggregator)()
+        _df_number_data = getattr(
+            _df.groupby([cat_columns, cat_rows, *data_distinguisher], as_index=False)[
+                col_data
+            ],
+            aggregator,
+        )()
 
-        # Compute statistics respective to the desired columns and row categories 
-        _df_number_data=getattr(_df_number_data.groupby([cat_columns, cat_rows])[col_data],stat_method)()
+        # Compute statistics respective to the desired columns and row categories
+        _df_number_data = getattr(
+            _df_number_data.groupby([cat_columns, cat_rows])[col_data], stat_method
+        )()
 
         # Formatting the numbers
-        _df_number_data=_df_number_data.apply(lambda x: str(int(x)) if x.is_integer() else x)
+        _df_number_data = _df_number_data.apply(
+            lambda x: str(int(x)) if x.is_integer() else x
+        )
 
         # From a multiindex to a row-column table and rename nan values
-        _result=pd.DataFrame(_df_number_data).unstack(level=0).fillna(nan_name)
+        _result = pd.DataFrame(_df_number_data).unstack(level=0).fillna(nan_name)
 
         # Set the display names
-        _result.columns=_result.columns.set_levels([quantity_name],level=0)
-        _result.columns=_result.columns.set_names(cat_columns_name,level=1)
-        _result.index=_result.index.set_names(cat_rows_name)
+        _result.columns = _result.columns.set_levels([quantity_name], level=0)
+        _result.columns = _result.columns.set_names(cat_columns_name, level=1)
+        _result.index = _result.index.set_names(cat_rows_name)
 
-        results[cat_tables_choice]=_result
-    
+        results[cat_tables_choice] = _result
+
     return results
