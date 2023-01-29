@@ -89,7 +89,7 @@ def separate_df_by_cat(
 def compute_stat_aggregate(
     df: pd.DataFrame,
     cats: List[str],
-    data_distinguisher: str,
+    data_distinguisher: List[str],
     col_val: str,
     aggregator: str,
     stat_method: str,
@@ -116,9 +116,6 @@ def compute_stat_aggregate(
     # Compute statistics respective to the desired columns and row categories
     _df = getattr(_df.groupby(cats)[col_val], stat_method)()
 
-    # Formatting the numbers
-    _df = _df.apply(lambda x: str(int(x)) if x.is_integer() else x)
-
     return _df
 
 
@@ -133,8 +130,7 @@ def stat_agg(
     stat_method: str,
     cat_columns_name: Optional[str] = None,
     cat_rows_name: Optional[str] = None,
-    quantity_name: Optional[str] = None,
-    nan_name: Optional[str] = "No Data",
+    nan_name: Optional[str] = None,
     order_cat_columns: Optional[str] = None,
 ) -> pd.DataFrame:
     """
@@ -157,7 +153,6 @@ def stat_agg(
         stat_method (str): Method of the statistics to compute. E.g. median, average, ...
         cat_columns_name (str): Display name of the columns title
         cat_rows_name (str): Display name of the rows title
-        quantity_name (str): Display name of the quantity
         nan_name (Optional[str], optional): _description_. Defaults to "No Data".
 
     Returns:
@@ -166,11 +161,6 @@ def stat_agg(
 
     cat_columns_name = cat_columns if cat_columns_name is None else cat_columns_name
     cat_rows_name = cat_rows if cat_rows_name is None else cat_rows_name
-    quantity_name = (
-        f"{stat_method} {col_data} per {data_distinguisher} ({aggregator})"
-        if quantity_name is None
-        else quantity_name
-    )
 
     # Initialize the tables in a dict
     results = separate_df_by_cat(df=df, cat=cat_tables)
@@ -200,84 +190,85 @@ def stat_agg(
     )
 
     # Add the DFs
-    result_df = (
-        reduce(lambda x, y: x.join(y, how="outer"), dict_to_list_df)
-        .unstack(level=0)
-        .fillna(nan_name)
+    result_df = reduce(lambda x, y: x.join(y, how="outer"), dict_to_list_df).unstack(
+        level=0
     )
 
-    # # Make adjustment for display
-    # result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
-    # result_df.index = result_df.index.set_names(cat_columns_name)
-    # if order_cat_columns is not None:
-    #     result_df = result_df.reindex(columns=order_cat_columns, level=1)
+    if nan_name is not None:
+        result_df = result_df.fillna(nan_name)
 
     return adjust_display_names(
-        df=result_df, 
-        cat_rows_name=cat_rows_name, cat_columns_name=cat_columns_name, 
-        order_cat_columns=order_cat_columns
-        )
+        df=result_df,
+        cat_rows_name=cat_rows_name,
+        cat_columns_name=cat_columns_name,
+        order_cat_columns=order_cat_columns,
+    )
+
 
 def agg_cat_stat_in_cells(
     df: pd.DataFrame,
-    cat_tables: str,
-    cat_row: str,
-    cat_col: str,
-    cat_in_cell_col: str,
-    col_val: str,
+    cat_rows: str,
+    cat_columns: str,
+    cat_in_cell_cols: str,
+    data_distinguisher: Union[str, List[str]],
+    col_data: str,
+    aggregator: str,
     stat_method: str,
     cat_columns_name: Optional[str] = None,
     cat_rows_name: Optional[str] = None,
     nan_name: Optional[str] = "No Data",
     order_cat_columns: Optional[str] = None,
+    round_num: Optional[int] = None,
 ) -> pd.DataFrame:
-    _df = getattr(
-        df.groupby([cat_tables, cat_col, cat_row, cat_in_cell_col], as_index=False)[
-            col_val
-        ],
-        stat_method,
-    )()
 
-    _dict_df = separate_df_by_cat(df=_df, cat=cat_tables)
-
-    _li_df_concated = map(
-        lambda x: (x[0], x[1][x[1][col_val] > 0].reset_index(drop=True)),
-        _dict_df.items(),
+    _df = stat_agg(
+        df=df,
+        cat_tables=cat_in_cell_cols,
+        cat_columns=cat_columns,
+        cat_rows=cat_rows,
+        data_distinguisher=data_distinguisher,
+        aggregator=aggregator,
+        stat_method=stat_method,
+        col_data=col_data,
     )
 
-    _li_df_concated = map(
-        lambda x: (
-            x[0],
-            concate_columns(x[1], [cat_in_cell_col, col_val], x[0]).drop(
-                columns=[cat_in_cell_col, col_val]
-            ),
-        ),
-        _li_df_concated,
-    )
+    li_cats_in_cell = _df.columns.levels[0]
 
-    _li_df_concated = map(
-        lambda x: x[1].groupby([cat_col, cat_row])[x[0]].apply(list), _li_df_concated
-    )
+    _df_list = [_df[cat].unstack(level=0) for cat in li_cats_in_cell]
 
-    _li_df_concated = [
-        _df_concated.apply(lambda x: list(map(lambda y: f"{y[0]}: {to_int(y[1])}", x)))
-        for _df_concated in _li_df_concated
+    for cat, _df in zip(li_cats_in_cell, _df_list):
+        _df.name = cat
+
+    _df_list = [pd.DataFrame(_df) for _df in _df_list]
+
+    _df_list = [_df[_df[cat].notna()] for cat, _df in zip(li_cats_in_cell, _df_list)]
+    _df_list = [_df[_df[cat] != 0] for cat, _df in zip(li_cats_in_cell, _df_list)]
+
+    if round_num is not None:
+        for cat, _df in zip(li_cats_in_cell, _df_list):
+            _df[cat] = _df[cat].apply(lambda x: str(to_int(x, round_num)))
+
+    _df_list = [
+        _df[cat].apply(lambda x: (cat, x))
+        for cat, _df in zip(li_cats_in_cell, _df_list)
     ]
 
-    _li_df_concated = [
-        _df_concated.apply(", ".join) for _df_concated in _li_df_concated
-    ]
-
-    _li_df_concated = [
-        pd.DataFrame(_df_concated).unstack(level=0) for _df_concated in _li_df_concated
-    ]
-
-    result_df=reduce(lambda x, y: x.join(y, how="outer"), _li_df_concated).fillna(
-        nan_name
+    _df_result = pd.concat(_df_list)
+    _df_result = (
+        _df_result.groupby([cat_columns, cat_rows])
+        .apply(list)
+        .apply(lambda x: list(map(lambda y: f"{y[0]}: {y[1]}", x)))
+        .apply(", ".join)
+        .unstack(level=0, fill_value=nan_name)
     )
 
-    return adjust_display_names(
-        df=result_df, 
-        cat_rows_name=cat_rows_name, cat_columns_name=cat_columns_name, 
-        order_cat_columns=order_cat_columns
-        )
+    if cat_rows_name is not None:
+        _df_result.columns.name = cat_columns_name
+
+    if cat_rows_name is not None:
+        _df_result.index.name = cat_rows_name
+
+    if order_cat_columns is not None:
+        _df_result = _df_result[order_cat_columns]
+
+    return _df_result
