@@ -78,7 +78,7 @@ def revert_key_val(dict_input: Union[dict, Series]) -> dict:
     return {val: ind for ind, val in dict_input.items()}
 
 
-def to_int(val: float, round_num: Optional[int]= None) -> Union[int, float]:
+def to_int(val: float, round_num: Optional[int] = None) -> Union[int, float]:
     """Transform an integer in float to int.
     Else the value remains in float.
     Args:
@@ -90,10 +90,10 @@ def to_int(val: float, round_num: Optional[int]= None) -> Union[int, float]:
     """
     if val.is_integer():
         return int(val)
-    
+
     if round_num:
-        return round(val,round_num)
-    
+        return round(val, round_num)
+
     return val
 
 
