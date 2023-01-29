@@ -8,6 +8,7 @@ from typing import List, Dict, Union, Optional
 from functools import reduce
 import pandas as pd
 from exploratory_analysis.preprocessing import pad_complete_cat_value, concate_columns
+from exploratory_analysis.basic_functions import to_int, adjust_display_names
 
 
 def group_and_fill(
@@ -206,17 +207,16 @@ def stat_agg(
     )
 
     # # Make adjustment for display
-    result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
-    result_df.index = result_df.index.set_names(cat_columns_name)
-    if order_cat_columns is not None:
-        result_df = result_df.reindex(columns=order_cat_columns, level=1)
+    # result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
+    # result_df.index = result_df.index.set_names(cat_columns_name)
+    # if order_cat_columns is not None:
+    #     result_df = result_df.reindex(columns=order_cat_columns, level=1)
 
-    return result_df
-
-
-def _to_int(val: float) -> Union[int, float]:
-    return int(val) if val.is_integer() else val
-
+    return adjust_display_names(
+        df=result_df, 
+        cat_rows_name=cat_rows_name, cat_columns_name=cat_columns_name, 
+        order_cat_columns=order_cat_columns
+        )
 
 def agg_cat_stat_in_cells(
     df: pd.DataFrame,
@@ -226,6 +226,10 @@ def agg_cat_stat_in_cells(
     cat_in_cell_col: str,
     col_val: str,
     stat_method: str,
+    cat_columns_name: Optional[str] = None,
+    cat_rows_name: Optional[str] = None,
+    nan_name: Optional[str] = "No Data",
+    order_cat_columns: Optional[str] = None,
 ) -> pd.DataFrame:
     _df = getattr(
         df.groupby([cat_tables, cat_col, cat_row, cat_in_cell_col], as_index=False)[
@@ -256,18 +260,24 @@ def agg_cat_stat_in_cells(
     )
 
     _li_df_concated = [
-        _df_concated.apply(lambda x: list(map(lambda y: f"{y[0]}: {_to_int(y[1])}", x)))
+        _df_concated.apply(lambda x: list(map(lambda y: f"{y[0]}: {to_int(y[1])}", x)))
         for _df_concated in _li_df_concated
     ]
 
     _li_df_concated = [
-        _df_concated.apply(lambda x: " , ".join(x)) for _df_concated in _li_df_concated
+        _df_concated.apply(", ".join) for _df_concated in _li_df_concated
     ]
 
     _li_df_concated = [
         pd.DataFrame(_df_concated).unstack(level=0) for _df_concated in _li_df_concated
     ]
 
-    return reduce(lambda x, y: x.join(y, how="outer"), _li_df_concated).fillna(
-        "No Data"
+    result_df=reduce(lambda x, y: x.join(y, how="outer"), _li_df_concated).fillna(
+        nan_name
     )
+
+    return adjust_display_names(
+        df=result_df, 
+        cat_rows_name=cat_rows_name, cat_columns_name=cat_columns_name, 
+        order_cat_columns=order_cat_columns
+        )

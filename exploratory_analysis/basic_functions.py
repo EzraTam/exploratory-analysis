@@ -3,7 +3,7 @@
 
 from typing import Union, List, Optional, Any
 from re import sub
-from pandas import Series
+from pandas import Series, DataFrame
 
 
 def distinct(input_list: List) -> List:
@@ -76,3 +76,31 @@ def revert_key_val(dict_input: Union[dict, Series]) -> dict:
         dict: Input dictionary with key and value reverted
     """
     return {val: ind for ind, val in dict_input.items()}
+
+def to_int(val: float) -> Union[int, float]:
+    """Transform an integer in float to int.
+    Else the value remains in float.
+    Args:
+        val (float): Value to transform
+
+    Returns:
+        Union[int, float]: Result
+    """
+    return int(val) if val.is_integer() else val
+
+def adjust_display_names(
+    df:DataFrame, cat_rows_name: str, cat_columns_name: str, 
+    order_cat_columns: Optional[str] = None
+    )->DataFrame:
+    """Adjust display name in pandas multiindex DF
+    """
+
+    # Make adjustment for display
+    df.columns = df.columns.set_names(cat_rows_name, level=1)
+
+    df.index = df.index.set_names(cat_columns_name)
+    
+    if order_cat_columns is not None:
+        df = df.reindex(columns=order_cat_columns, level=1)
+
+    return df
