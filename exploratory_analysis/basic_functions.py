@@ -96,10 +96,10 @@ def adjust_display_names(
     """
 
     # Make adjustment for display
-    df.columns = df.columns.set_names(cat_rows_name, level=1)
+    df.columns = df.columns.set_names(cat_columns_name, level=1)
 
-    df.index = df.index.set_names(cat_columns_name)
-    
+    df.index = df.index.set_names(cat_rows_name)
+
     if order_cat_columns is not None:
         df = df.reindex(columns=order_cat_columns, level=1)
 

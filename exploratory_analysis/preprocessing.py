@@ -2,8 +2,8 @@
 """
 
 from typing import List, Dict, Union, Optional
-import pandas as pd
 from itertools import product
+import pandas as pd
 import exploratory_analysis.basic_functions as bf
 
 
