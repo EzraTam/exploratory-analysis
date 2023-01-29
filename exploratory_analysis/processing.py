@@ -93,6 +93,7 @@ def compute_stat_aggregate(
     col_val: str,
     aggregator: str,
     stat_method: str,
+    round_num: Optional[int]= None
 ) -> pd.DataFrame:
     """Aggregate data then compute stats
 
@@ -117,7 +118,7 @@ def compute_stat_aggregate(
     _df = getattr(_df.groupby(cats)[col_val], stat_method)()
 
     # Formatting the numbers
-    _df = _df.apply(lambda x: str(int(x)) if x.is_integer() else x)
+    _df = _df.apply(lambda x: str(to_int(x,round_num)))
 
     return _df
 
@@ -133,9 +134,9 @@ def stat_agg(
     stat_method: str,
     cat_columns_name: Optional[str] = None,
     cat_rows_name: Optional[str] = None,
-    quantity_name: Optional[str] = None,
     nan_name: Optional[str] = "No Data",
     order_cat_columns: Optional[str] = None,
+    round_num: Optional[int] = None
 ) -> pd.DataFrame:
     """
     Statistically aggregate data respective two three categories:
@@ -157,7 +158,6 @@ def stat_agg(
         stat_method (str): Method of the statistics to compute. E.g. median, average, ...
         cat_columns_name (str): Display name of the columns title
         cat_rows_name (str): Display name of the rows title
-        quantity_name (str): Display name of the quantity
         nan_name (Optional[str], optional): _description_. Defaults to "No Data".
 
     Returns:
@@ -166,11 +166,6 @@ def stat_agg(
 
     cat_columns_name = cat_columns if cat_columns_name is None else cat_columns_name
     cat_rows_name = cat_rows if cat_rows_name is None else cat_rows_name
-    quantity_name = (
-        f"{stat_method} {col_data} per {data_distinguisher} ({aggregator})"
-        if quantity_name is None
-        else quantity_name
-    )
 
     # Initialize the tables in a dict
     results = separate_df_by_cat(df=df, cat=cat_tables)
@@ -189,6 +184,7 @@ def stat_agg(
                 col_val=col_data,
                 aggregator=aggregator,
                 stat_method=stat_method,
+                round_num=round_num
             ),
         ),
         results.items(),
@@ -205,12 +201,6 @@ def stat_agg(
         .unstack(level=0)
         .fillna(nan_name)
     )
-
-    # # Make adjustment for display
-    # result_df.columns = result_df.columns.set_names(cat_rows_name, level=1)
-    # result_df.index = result_df.index.set_names(cat_columns_name)
-    # if order_cat_columns is not None:
-    #     result_df = result_df.reindex(columns=order_cat_columns, level=1)
 
     return adjust_display_names(
         df=result_df,
