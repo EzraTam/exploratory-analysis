@@ -213,10 +213,12 @@ def stat_agg(
     #     result_df = result_df.reindex(columns=order_cat_columns, level=1)
 
     return adjust_display_names(
-        df=result_df, 
-        cat_rows_name=cat_rows_name, cat_columns_name=cat_columns_name, 
-        order_cat_columns=order_cat_columns
-        )
+        df=result_df,
+        cat_rows_name=cat_rows_name,
+        cat_columns_name=cat_columns_name,
+        order_cat_columns=order_cat_columns,
+    )
+
 
 def agg_cat_stat_in_cells(
     df: pd.DataFrame,
@@ -272,12 +274,13 @@ def agg_cat_stat_in_cells(
         pd.DataFrame(_df_concated).unstack(level=0) for _df_concated in _li_df_concated
     ]
 
-    result_df=reduce(lambda x, y: x.join(y, how="outer"), _li_df_concated).fillna(
+    result_df = reduce(lambda x, y: x.join(y, how="outer"), _li_df_concated).fillna(
         nan_name
     )
 
     return adjust_display_names(
-        df=result_df, 
-        cat_rows_name=cat_rows_name, cat_columns_name=cat_columns_name, 
-        order_cat_columns=order_cat_columns
-        )
+        df=result_df,
+        cat_rows_name=cat_rows_name,
+        cat_columns_name=cat_columns_name,
+        order_cat_columns=order_cat_columns,
+    )

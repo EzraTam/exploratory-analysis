@@ -77,6 +77,7 @@ def revert_key_val(dict_input: Union[dict, Series]) -> dict:
     """
     return {val: ind for ind, val in dict_input.items()}
 
+
 def to_int(val: float) -> Union[int, float]:
     """Transform an integer in float to int.
     Else the value remains in float.
@@ -88,12 +89,14 @@ def to_int(val: float) -> Union[int, float]:
     """
     return int(val) if val.is_integer() else val
 
+
 def adjust_display_names(
-    df:DataFrame, cat_rows_name: str, cat_columns_name: str, 
-    order_cat_columns: Optional[str] = None
-    )->DataFrame:
-    """Adjust display name in pandas multiindex DF
-    """
+    df: DataFrame,
+    cat_rows_name: str,
+    cat_columns_name: str,
+    order_cat_columns: Optional[str] = None,
+) -> DataFrame:
+    """Adjust display name in pandas multiindex DF"""
 
     # Make adjustment for display
     df.columns = df.columns.set_names(cat_columns_name, level=1)
