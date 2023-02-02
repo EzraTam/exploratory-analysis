@@ -24,6 +24,7 @@ openpyxl = "^3.0.10"
 ipykernel = "^6.16.2"
 pylint = "^2.15.5"
 black = "^22.10.0"
+notebook = "^6.5.2"
 
 [build-system]
 requires = ["poetry-core"]
