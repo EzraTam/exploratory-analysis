@@ -86,7 +86,6 @@ def recurse_list_get_attribute_pd(
         list_to_recurse=list_to_recurse[1:],
     )
 
-
 def basic_analysis_df(df_input: pd.DataFrame) -> Dict[str, Union[pd.DataFrame, int]]:
     """Function for giving a basic analysis of a DF
         Implemented:
