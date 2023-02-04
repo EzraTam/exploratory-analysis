@@ -13,13 +13,20 @@ class DataImport:
     path.
     """
 
-    def __init__(self, file_path: str, parse_dates: Optional[List[str]] = None):
+    def __init__(
+        self,
+        file_path: str,
+        parse_dates: Optional[Union[List[str], Dict[str, List[str]]]] = None,
+        dayfirst: Optional[bool] = False,
+    ):
         # Read input∏
         self.file_path = file_path
 
         self.file_format = pathlib.PurePath(self.file_path).name.split(".")[1]
 
         self.parse_dates = parse_dates
+
+        self.dayfirst = dayfirst
 
         # check file format
         implemented_file_format = ["xls", "csv"]
@@ -43,14 +50,16 @@ class DataImport:
             }
 
         if self.file_format == "csv":
-            parse_dates = (
-                None if self.parse_dates is None else {"Date_Time": self.parse_dates}
+            parse_dates = None if self.parse_dates is None else self.parse_dates
+            return pd.read_csv(
+                self.file_path, parse_dates=parse_dates, dayfirst=self.dayfirst
             )
-            return pd.read_csv(self.file_path, parse_dates=parse_dates)
 
 
 def import_to_pds(
-    path: str, parse_dates: Optional[List[str]] = None
+    path: str,
+    parse_dates: Optional[Union[List[str], Dict[str, List[str]]]] = None,
+    dayfirst: Optional[bool] = False,
 ) -> Union[Dict[str, pd.DataFrame], pd.DataFrame]:
     """Function for importing DF from certain file
 
@@ -60,4 +69,6 @@ def import_to_pds(
     Returns:
         Dict[str, pd.DataFrame]: Dictionary for DF for each sheets
     """
-    return DataImport(path, parse_dates=parse_dates).load_file_to_pds()
+    return DataImport(
+        path, parse_dates=parse_dates, dayfirst=dayfirst
+    ).load_file_to_pds()
