@@ -20,7 +20,7 @@ def group_and_fill(
     aggregator: str,
     additional_columns: Union[List[str], str],
 ) -> pd.DataFrame:
-    """Group a data frame respective a category then 
+    """Group a data frame respective a category then
     fill the category with complete list of subcategories
 
     Args:
@@ -30,7 +30,7 @@ def group_and_fill(
         cols_values (List[str]): Column names of the values to aggregate
         value_for_completion (Union[str,int,float]): Default values for the missing subcategories
         aggregator (str): Aggregation method
-        additional_columns (Union[List[str],str]): additional columns to add to the result table 
+        additional_columns (Union[List[str],str]): additional columns to add to the result table
             from the original table.
                 Need to be 1-1 to the cat_nm column
 
@@ -101,7 +101,7 @@ def compute_stat_aggregate(
     Args:
         df (pd.DataFrame): DF to be processed
         cats (List[str]): Categories for which statistics are computed
-        data_distinguisher (str): distinguisher of the data. 
+        data_distinguisher (str): distinguisher of the data.
             Aggregation is respective to this columns
         col_val (str): Columns containing values to be analyzed
         aggregator (str): Method for aggregation
@@ -276,8 +276,15 @@ def agg_cat_stat_in_cells(
 
     return _df_result
 
-def create_matrix_cats(df:pd.DataFrame, plot_cat_col:str, cat_cols:List[str], val_col:str, agg_method: str)->List[Tuple[Union[int,str],pd.DataFrame]]:
-    """ Function for creating matrix with values equal to aggregation
+
+def create_matrix_cats(
+    df: pd.DataFrame,
+    plot_cat_col: str,
+    cat_cols: List[str],
+    val_col: str,
+    agg_method: str,
+) -> List[Tuple[Union[int, str], pd.DataFrame]]:
+    """Function for creating matrix with values equal to aggregation
     over some categories
 
     Args:
@@ -294,12 +301,22 @@ def create_matrix_cats(df:pd.DataFrame, plot_cat_col:str, cat_cols:List[str], va
     _plot_cats = df[plot_cat_col].unique()
 
     # Compute the aggregation
-    _df_aggregated=getattr(df.groupby([plot_cat_col, *cat_cols],as_index=False)[val_col],agg_method)()
+    _df_aggregated = getattr(
+        df.groupby([plot_cat_col, *cat_cols], as_index=False)[val_col], agg_method
+    )()
 
-    # Query 
-    _df_results = map(lambda cat: _df_aggregated.query(f"{plot_cat_col} == '{cat}'").drop(columns=[plot_cat_col]),_plot_cats)
-    
+    # Query
+    _df_results = map(
+        lambda cat: _df_aggregated.query(f"{plot_cat_col} == '{cat}'").drop(
+            columns=[plot_cat_col]
+        ),
+        _plot_cats,
+    )
+
     # Pivot to get matrix
-    _df_results = map(lambda _df: _df.pivot(index=cat_cols[0], columns=cat_cols[1], values=val_col),_df_results)
+    _df_results = map(
+        lambda _df: _df.pivot(index=cat_cols[0], columns=cat_cols[1], values=val_col),
+        _df_results,
+    )
 
-    return list(zip(_plot_cats,_df_results))
+    return list(zip(_plot_cats, _df_results))
