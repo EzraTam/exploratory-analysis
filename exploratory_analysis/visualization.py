@@ -2,10 +2,12 @@
 """
 
 from collections import Counter
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Tuple, Optional, Union
 from matplotlib.axes import Axes
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+
 import pandas as pd
 import seaborn as sns
 
@@ -303,5 +305,43 @@ def plot_box_count(
 
     # Delete legend - Need a more elegant solution, e.g. create legend for both plots
     count_plot.get_legend().remove()
+
+    plt.show()
+
+
+def plot_heat_map_from_matrices(
+    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]], plot_title: str
+) -> None:
+    """Given matrices, plot multiple heat maps
+
+    Args:
+        dfs_matrix (List[Tuple[Union[str,int],pd.DataFrame]]): Inpot aggregation matrices
+        plot_title (str): Title of the plot
+    """
+
+    # Has to be adjustable later
+    cmap = LinearSegmentedColormap.from_list(
+        "rg", ["r", "y", "g", "g", "g", "g"], N=256
+    )
+
+    fig, axs = plt.subplots(nrows=len(dfs_matrix), figsize=(30, 15), sharex="row")
+    fig.suptitle(plot_title, fontsize=25)
+
+    config_heatmap = {
+        "cmap": cmap,
+        "annot": True,
+        "linewidth": 0.5,
+        "vmin": 0,
+        "vmax": 4,
+        "square": True,
+        "fmt": ".2f",
+    }
+    font_config = {"fontweight": "bold", "fontsize": 20, "pad": 15}
+
+    for idx, (_cat_matrix, _df_matrix) in enumerate(dfs_matrix):
+        sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
+        axs[idx].set_title(_cat_matrix, **font_config)
+
+    fig.subplots_adjust(wspace=0.01)
 
     plt.show()
