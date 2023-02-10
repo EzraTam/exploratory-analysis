@@ -223,7 +223,32 @@ def agg_cat_stat_in_cells(
     order_cat_columns: Optional[str] = None,
     round_num: Optional[int] = None,
 ) -> pd.DataFrame:
+    """_summary_
 
+    Args:
+        df (pd.DataFrame): Data
+        cat_rows (str): Column name of the data for the row category
+        cat_columns (str): Column name of the data for the row category
+        cat_in_cell_cols (str): Category for the items in the cells
+        data_distinguisher (Union[str, List[str]]): Distinguisher of the data for the pre-grouping
+        col_data (str): Column of the value for aggregation
+        aggregator (str): Method for the pregrouping aggregation
+        stat_method (str): Statistical method for the final aggregation
+        cat_columns_name (Optional[str], optional): Display name of the columns. Defaults to None.
+        cat_rows_name (Optional[str], optional): Display name of the rows. Defaults to None.
+        nan_name (Optional[str], optional): Display name of NaN. Defaults to "No Data".
+        order_cat_columns (Optional[str], optional): Order of the columns. Defaults to None.
+        round_num (Optional[int], optional): Round to which digit. Defaults to None.
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    
+    # Create a table with multi-index column with index = cat_in_cell_cols, 
+    # subindex = cat_columns and row = cat_rows, each cell is formed by aggregating
+    # data grouped by the data_distinguisher category (and categories for the columns and rows). 
+    # The aggregation is done by method = aggregator. Each cell is formed then by aggregating
+    # respective to the column and row categories. Aggregation is done by the stat_methods
     _df = stat_agg(
         df=df,
         cat_tables=cat_in_cell_cols,
@@ -235,10 +260,13 @@ def agg_cat_stat_in_cells(
         col_data=col_data,
     )
 
+    # extract the parent categories (cat_in_cell_cols)
     li_cats_in_cell = _df.columns.levels[0]
 
+    # Create list of  with each represent the specific parent category (cat_in_cell_cols)
     _df_list = [_df[cat].unstack(level=0) for cat in li_cats_in_cell]
 
+    # Assign the name to the resulting DFs
     for cat, _df in zip(li_cats_in_cell, _df_list):
         _df.name = cat
 
