@@ -6,6 +6,7 @@ Functionalities:
 
 from typing import List, Dict, Union, Optional, Tuple
 from functools import reduce
+import numpy as np
 import pandas as pd
 from exploratory_analysis.preprocessing import pad_complete_cat_value
 from exploratory_analysis.basic_functions import to_int, adjust_display_names
@@ -290,8 +291,20 @@ def agg_cat_stat_in_cells(
         .apply(list)
         .apply(lambda x: list(map(lambda y: f"{y[0]}: {y[1]}", x)))
         .apply(", ".join)
-        .unstack(level=0, fill_value=nan_name)
+        .unstack(level=0)
     )
+
+    ## Add nan_name entries if no column exist
+    columns_not_existent = list(
+        set(order_cat_columns)-set(list(_df_result.columns))
+        ) if order_cat_columns is not None else []
+
+    if len(columns_not_existent)>0:
+        for _col in columns_not_existent:
+            _df_result[_col]=np.nan
+
+    # Fill the nulls
+    _df_result = _df_result.fillna(nan_name)
 
     if cat_rows_name is not None:
         _df_result.columns.name = cat_columns_name
