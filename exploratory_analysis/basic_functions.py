@@ -1,9 +1,9 @@
 """Module for basic functions
 """
-
-from typing import Union, List, Optional, Any
+from collections import defaultdict
+from typing import Union, List, Optional, Any, Tuple, Dict
 from re import sub
-from pandas import Series, DataFrame
+import pandas as pd
 
 
 def distinct(input_list: List) -> List:
@@ -39,7 +39,7 @@ def set_zero_if_below(list_input: List[float], limit: float) -> List[float]:
     return [val if val >= limit else 0 for val in list_input]
 
 
-def return_obj_val_in_list_order(object_to_order: Series, key_list: List) -> List:
+def return_obj_val_in_list_order(object_to_order: pd.Series, key_list: List) -> List:
     """Function for returning values of an object in a given key order
 
     Args:
@@ -67,7 +67,7 @@ def snake_case(string: str) -> str:
     ).lower()
 
 
-def revert_key_val(dict_input: Union[dict, Series]) -> dict:
+def revert_key_val(dict_input: Union[dict, pd.Series]) -> dict:
     """Revert key and value in a dictionary
     Args:
         dict_input (Union[dict,Series]): Input dictionary
@@ -98,11 +98,11 @@ def to_int(val: float, round_num: Optional[int] = None) -> Union[int, float]:
 
 
 def adjust_display_names(
-    df: DataFrame,
+    df: pd.DataFrame,
     cat_rows_name: str,
     cat_columns_name: str,
     order_cat_columns: Optional[str] = None,
-) -> DataFrame:
+) -> pd.DataFrame:
     """Adjust display name in pandas multiindex DF"""
 
     # Make adjustment for display
@@ -114,3 +114,23 @@ def adjust_display_names(
         df = df.reindex(columns=order_cat_columns, level=1)
 
     return df
+
+
+def df_to_list(df: pd.DataFrame) -> List[Tuple[Any]]:
+    """Function for extracting DF to list of tuples"""
+    return list(df.itertuples(index=False, name=None))
+
+
+def extract_from_tuple(list_tuple, idx) -> List[Any]:
+    """Function for extracting an element of tuples list"""
+    return [_tuple[idx] for _tuple in list_tuple]
+
+
+def merge_dicts_into_list_values(list_dicts: List[Dict]) -> Dict[str, List]:
+    """Merge list of dicts with key and list of values"""
+    _dd = defaultdict(list)
+    for _dict in list_dicts:
+        for key, value in _dict.items():
+            _dd[key].extend(value)
+
+    return _dd

@@ -2,10 +2,13 @@
 """
 
 from collections import Counter
-from typing import Any, List, Tuple, Optional, Union
+from itertools import chain
+from typing import Any, List, Tuple, Optional, Union, Dict, Iterable
 from matplotlib.axes import Axes
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
+import matplotlib.cm as cmx
+from matplotlib import colors
 from matplotlib.colors import LinearSegmentedColormap
 
 import pandas as pd
@@ -46,13 +49,13 @@ def piechart_list(
         list_axes (List[Axes]): _description_
     """
 
-    colors = sns.color_palette("pastel")[0:5]
+    colors_from_palette = sns.color_palette("pastel")[0:5]
 
     for ax, data in zip(list_axes, li_data):
         ax.pie(
             x=data,
             labels=labels,
-            colors=colors,
+            colors=colors_from_palette,
             explode=bf.set_zero_if_below(data / sum(data), 0.1),
             autopct="%.0f%%",
             pctdistance=1.1,
@@ -345,3 +348,108 @@ def plot_heat_map_from_matrices(
     fig.subplots_adjust(wspace=0.01)
 
     plt.show()
+
+
+## Sankey Diagram
+
+
+def create_color_from_values(values: List[float], color_palette: str) -> List[float]:
+    """Create colors from number of values
+
+    Args:
+        values (List[float]): List of values to transform
+        color_palette (str): Color palette name, e.g. 'RdYlGn' and 'Spectral'
+
+    Returns:
+        List[float]: List of colors
+    """
+
+    norm = colors.Normalize(vmin=min(values), vmax=max(values))
+
+    cmap = cmx.get_cmap(color_palette)
+    scalar_map = cmx.ScalarMappable(norm=norm, cmap=cmap)
+
+    _result = map(scalar_map.to_rgba, values)
+
+    return list(map(colors.to_hex, _result))
+
+
+def _extract_source_target_label(
+    df: pd.DataFrame, source_target: Tuple[str, str]
+) -> Dict[str, List[Union[str, int]]]:
+    """Extract the source and target labels from a DF
+
+    Args:
+        df (pd.DataFrame): DF input
+        source_target (Tuple[str,str]): (source column name, target column name)
+
+    Returns:
+        Dict[str,List[Union[str,int]]]:
+    """
+    return {
+        source_target[0]: list(df[source_target[0]].unique()),
+        source_target[1]: list(df[source_target[1]].unique()),
+    }
+
+
+def _create_colors_from_data(
+    data_tuple: Tuple[Any, Any, Union[float, int]],
+    color_palette: Optional[str] = "RdYlGn",
+) -> List[str]:
+    """From data of the form (..., ..., value) create colors from the values
+
+    Args:
+        data_tuple (Tuple[Any,Any,Union[float,int]]): Data in form of list of tuples
+        color_palette (Optional[str], optional): Color palettes. Defaults to "RdYlGn".
+
+    Returns:
+        List[str]: List of color values in hex
+    """
+
+    # Values is in the third entry in each of the tuple
+    _colors = map(lambda x: bf.extract_from_tuple(x, 2), data_tuple)
+
+    # Assign colors to the values - for each sorce target level one crreation
+    # consider to extend
+    return list(map(lambda x: create_color_from_values(x, color_palette), _colors))
+
+
+def transform_data_to_source_target(
+    dfs: Iterable[pd.DataFrame], source_target_pairs: Iterable[Tuple[str, str]]
+):
+    """Create source target data with color on values
+    """
+
+    # Extract data from dfs
+    _data = list(map(bf.df_to_list, dfs))
+
+    _colors = _create_colors_from_data(data_tuple=_data)
+
+    # # Values is in the third entry in each of the tuple
+    # _colors = map(lambda x: extract_from_tuple(x,2), _data)
+
+    # # Assign colors to the values - for each sorce target level one crreation
+    # # consider to extend
+    # _colors = map(lambda x: create_color_from_values(x,"RdYlGn"),_colors)
+
+    # Unpack the data to a long vector and color
+    data_coloured = zip(*map(lambda x: list(chain.from_iterable(x)), [_data, _colors]))
+    data_coloured = [(*element[0], element[1]) for element in data_coloured]
+
+    ## Create label for the nodes
+    _dfs_cat = zip(dfs, source_target_pairs)
+
+    _source_target_labels = map(
+        lambda _tuple: _extract_source_target_label(_tuple[0], _tuple[1]), _dfs_cat
+    )
+
+    # Merging dict of labels and collect values on same keys into a list
+    _source_target_labels = bf.merge_dicts_into_list_values(_source_target_labels)
+
+    # drop duplicates in each of the lists
+    # _source_target_labels = map(lambda x: list(set(x)), _source_target_labels.values())
+    label_categorized = {
+        key: list(set(value)) for key, value in _source_target_labels.items()
+    }
+
+    return data_coloured, label_categorized
