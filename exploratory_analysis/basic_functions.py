@@ -134,3 +134,49 @@ def merge_dicts_into_list_values(list_dicts: List[Dict]) -> Dict[str, List]:
             _dd[key].extend(value)
 
     return _dd
+
+
+# Functions for sorting
+
+
+def sort_by_list(list_input: List, order: List) -> List:
+    """Sort a list by a given list of order
+
+    Args:
+        list_input (List): List to sort
+        order (List): Order of the elements
+
+    Returns:
+        List: Ordered List
+    """
+    _dict_key_order_idx = {_key: _idx for _idx, _key in enumerate(order)}
+    _dict_key_order_idx_inv = {_idx: _key for _key, _idx in _dict_key_order_idx.items()}
+
+    _result = sorted(map(lambda _key: _dict_key_order_idx[_key], list_input))
+    return list(map(lambda idx: _dict_key_order_idx_inv[idx], _result))
+
+
+def sort_week_day(list_week_day: List[str]) -> List[str]:
+    """Sort a list of week days"""
+    _week_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+    return sort_by_list(list_week_day, _week_days)
+
+
+def sort_month(list_months: List[str]) -> List[str]:
+    """Sort a list of months"""
+    _months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]
+    return sort_by_list(list_months, _months)
