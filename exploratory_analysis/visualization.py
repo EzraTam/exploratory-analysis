@@ -14,6 +14,8 @@ from matplotlib.colors import LinearSegmentedColormap
 import pandas as pd
 import seaborn as sns
 
+import plotly.graph_objects as go
+
 from exploratory_analysis import basic_functions as bf
 
 
@@ -417,8 +419,7 @@ def _create_colors_from_data(
 def transform_data_to_source_target(
     dfs: Iterable[pd.DataFrame], source_target_pairs: Iterable[Tuple[str, str]]
 ):
-    """Create source target data with color on values
-    """
+    """Create source target data with color on values"""
 
     # Extract data from dfs
     _data = list(map(bf.df_to_list, dfs))
@@ -453,3 +454,53 @@ def transform_data_to_source_target(
     }
 
     return data_coloured, label_categorized
+
+
+def plot_sankey(
+    label: List[str],
+    color_node: List[str],
+    source: List[Union[str, int]],
+    target: List[Union[str, int]],
+    values: List[float],
+    color_conn: List[str],
+    title: str,
+) -> None:
+    """
+    Plot Sankey Diagram
+    """
+    fig = go.Figure(
+        data=[
+            go.Sankey(
+                valueformat=".0f",
+                valuesuffix="Mill R",
+                node=dict(
+                    pad=5,
+                    thickness=10,
+                    line=dict(color="black", width=0.05),
+                    label=label,
+                    # x=[0.1, 0.1, 0.1, 0.1, 0.1, 0.3,0.3,0.3,0.3,0.3,0.3,0.5], # Need to adjust positions
+                    # y=[0.1, 0.3, 0.4, 0.5, 0.6, 0.1,0.3,0.4,0.5,0.6,0.7,0.4],
+                    color=color_node,
+                ),
+                link=dict(
+                    arrowlen=30,
+                    source=source,  # indices correspond to source node wrt to label
+                    target=target,
+                    value=values,
+                    color=color_conn,
+                ),
+            )
+        ]
+    )
+
+    fig.update_layout(
+        hovermode="x",
+        title=title,
+        font=dict(size=10, color="black"),
+        width=1300,
+        height=700,
+    )
+
+    fig.show()
+
+    return None
