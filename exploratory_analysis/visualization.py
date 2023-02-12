@@ -456,6 +456,20 @@ def transform_data_to_source_target(
     return data_coloured, label_categorized
 
 
+def df_to_dag(
+    df: pd.DataFrame, categories: List[Tuple[str, str]], col_val: str
+) -> Tuple[
+    List[Tuple[str, str, float, str]], Dict[Union[str, int], List[Union[str, int]]]
+]:
+    """Function to create directed acyclic graph from given categories specified
+    by list of (source,target)
+    """
+    _levels_df = map(
+        lambda x: df.groupby(list(x), as_index=False)[col_val].sum(), categories
+    )
+    return transform_data_to_source_target(list(_levels_df), categories)
+
+
 def plot_sankey(
     label: List[str],
     color_node: List[str],
