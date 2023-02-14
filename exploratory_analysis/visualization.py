@@ -518,3 +518,29 @@ def plot_sankey(
     fig.show()
 
     return None
+
+
+def create_sankey_from_df(
+    df: pd.DataFrame, categories: List[Tuple[str, str]], col_val: str, title: str
+) -> None:
+    """Master function for creating Sankey diagram from dat by aggregation"""
+    data_coloured, label_categorized = df_to_dag(df, categories, col_val)
+
+    # # TODO: Involve order services
+
+    # label_categorized["day_name"]=ea.sort_week_day(label_categorized["day_name"])
+    # label_categorized["month"]=ea.sort_month(label_categorized["month"])
+    # label_categorized["year"]=sorted(label_categorized["year"])
+
+    label = list(chain.from_iterable(label_categorized.values()))
+
+    source = [label.index(x[0]) for x in data_coloured]
+
+    target = [label.index(x[1]) for x in data_coloured]
+    values = [x[2] for x in data_coloured]
+    color_conn = [x[3] for x in data_coloured]
+    color_node = ["#a6cee3"] * len(label)
+
+    plot_sankey(label, color_node, source, target, values, color_conn, title)
+
+    return None
