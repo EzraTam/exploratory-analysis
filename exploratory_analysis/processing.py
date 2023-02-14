@@ -244,10 +244,10 @@ def agg_cat_stat_in_cells(
     Returns:
         pd.DataFrame: _description_
     """
-    
-    # Create a table with multi-index column with index = cat_in_cell_cols, 
+
+    # Create a table with multi-index column with index = cat_in_cell_cols,
     # subindex = cat_columns and row = cat_rows, each cell is formed by aggregating
-    # data grouped by the data_distinguisher category (and categories for the columns and rows). 
+    # data grouped by the data_distinguisher category (and categories for the columns and rows).
     # The aggregation is done by method = aggregator. Each cell is formed then by aggregating
     # respective to the column and row categories. Aggregation is done by the stat_methods
     _df = stat_agg(
@@ -295,13 +295,15 @@ def agg_cat_stat_in_cells(
     )
 
     ## Add nan_name entries if no column exist
-    columns_not_existent = list(
-        set(order_cat_columns)-set(list(_df_result.columns))
-        ) if order_cat_columns is not None else []
+    columns_not_existent = (
+        list(set(order_cat_columns) - set(list(_df_result.columns)))
+        if order_cat_columns is not None
+        else []
+    )
 
-    if len(columns_not_existent)>0:
+    if len(columns_not_existent) > 0:
         for _col in columns_not_existent:
-            _df_result[_col]=np.nan
+            _df_result[_col] = np.nan
 
     # Fill the nulls
     _df_result = _df_result.fillna(nan_name)
