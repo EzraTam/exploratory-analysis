@@ -10,6 +10,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
 
+
+import plotly.express as px
 import plotly.graph_objects as go
 
 from sklearn.feature_selection import SelectKBest
@@ -55,7 +57,17 @@ def show_corr_matrix_filtered(
             filtered_df, annot=True, cmap="Reds", linewidths=0.5, linecolor="gray"
         )
         plt.show()
-    # elif by_which == "plotly":
+    elif by_which == "plotly":
+        fig = px.imshow(filtered_df,labels={"x":"x-Feature ", "y":"y-Feature", "color":"Correlation Coefficient"}, width=1000, aspect= "auto")
+        fig.update_xaxes(tickangle=45,ticksuffix = "  ")
+        fig.update_yaxes(tickangle=-45,ticksuffix = "  ")
+        fig.update_layout(
+            title= "Correlation",
+            font=dict(
+                size=11,
+            )
+        )
+        fig.show()
 
     return filtered_df
 
