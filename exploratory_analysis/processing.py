@@ -4,10 +4,11 @@ Functionalities:
     * Show statistics by grouping
 """
 
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Tuple
 from functools import reduce
+import numpy as np
 import pandas as pd
-from exploratory_analysis.preprocessing import pad_complete_cat_value, concate_columns
+from exploratory_analysis.preprocessing import pad_complete_cat_value
 from exploratory_analysis.basic_functions import to_int, adjust_display_names
 
 
@@ -20,7 +21,8 @@ def group_and_fill(
     aggregator: str,
     additional_columns: Union[List[str], str],
 ) -> pd.DataFrame:
-    """Group a data frame respective a category then fill the category with complete list of subcategories
+    """Group a data frame respective a category then
+    fill the category with complete list of subcategories
 
     Args:
         df (pd.DataFrame): DF to be processed
@@ -29,8 +31,9 @@ def group_and_fill(
         cols_values (List[str]): Column names of the values to aggregate
         value_for_completion (Union[str,int,float]): Default values for the missing subcategories
         aggregator (str): Aggregation method
-        additional_columns (Union[List[str],str]): additional columns to add to the result table from the original table.
-            Need to be 1-1 to the cat_nm column
+        additional_columns (Union[List[str],str]): additional columns to add to the result table
+            from the original table.
+                Need to be 1-1 to the cat_nm column
 
     Returns:
         pd.DataFrame: _description_‚
@@ -99,7 +102,8 @@ def compute_stat_aggregate(
     Args:
         df (pd.DataFrame): DF to be processed
         cats (List[str]): Categories for which statistics are computed
-        data_distinguisher (str): distinguisher of the data. Aggregation is respective to this columns
+        data_distinguisher (str): distinguisher of the data.
+            Aggregation is respective to this columns
         col_val (str): Columns containing values to be analyzed
         aggregator (str): Method for aggregation
         stat_method (str): Method for statistics
@@ -220,7 +224,32 @@ def agg_cat_stat_in_cells(
     order_cat_columns: Optional[str] = None,
     round_num: Optional[int] = None,
 ) -> pd.DataFrame:
+    """_summary_
 
+    Args:
+        df (pd.DataFrame): Data
+        cat_rows (str): Column name of the data for the row category
+        cat_columns (str): Column name of the data for the row category
+        cat_in_cell_cols (str): Category for the items in the cells
+        data_distinguisher (Union[str, List[str]]): Distinguisher of the data for the pre-grouping
+        col_data (str): Column of the value for aggregation
+        aggregator (str): Method for the pregrouping aggregation
+        stat_method (str): Statistical method for the final aggregation
+        cat_columns_name (Optional[str], optional): Display name of the columns. Defaults to None.
+        cat_rows_name (Optional[str], optional): Display name of the rows. Defaults to None.
+        nan_name (Optional[str], optional): Display name of NaN. Defaults to "No Data".
+        order_cat_columns (Optional[str], optional): Order of the columns. Defaults to None.
+        round_num (Optional[int], optional): Round to which digit. Defaults to None.
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+
+    # Create a table with multi-index column with index = cat_in_cell_cols,
+    # subindex = cat_columns and row = cat_rows, each cell is formed by aggregating
+    # data grouped by the data_distinguisher category (and categories for the columns and rows).
+    # The aggregation is done by method = aggregator. Each cell is formed then by aggregating
+    # respective to the column and row categories. Aggregation is done by the stat_methods
     _df = stat_agg(
         df=df,
         cat_tables=cat_in_cell_cols,
@@ -232,10 +261,13 @@ def agg_cat_stat_in_cells(
         col_data=col_data,
     )
 
+    # extract the parent categories (cat_in_cell_cols)
     li_cats_in_cell = _df.columns.levels[0]
 
+    # Create list of  with each represent the specific parent category (cat_in_cell_cols)
     _df_list = [_df[cat].unstack(level=0) for cat in li_cats_in_cell]
 
+    # Assign the name to the resulting DFs
     for cat, _df in zip(li_cats_in_cell, _df_list):
         _df.name = cat
 
@@ -259,8 +291,22 @@ def agg_cat_stat_in_cells(
         .apply(list)
         .apply(lambda x: list(map(lambda y: f"{y[0]}: {y[1]}", x)))
         .apply(", ".join)
-        .unstack(level=0, fill_value=nan_name)
+        .unstack(level=0)
     )
+
+    ## Add nan_name entries if no column exist
+    columns_not_existent = (
+        list(set(order_cat_columns) - set(list(_df_result.columns)))
+        if order_cat_columns is not None
+        else []
+    )
+
+    if len(columns_not_existent) > 0:
+        for _col in columns_not_existent:
+            _df_result[_col] = np.nan
+
+    # Fill the nulls
+    _df_result = _df_result.fillna(nan_name)
 
     if cat_rows_name is not None:
         _df_result.columns.name = cat_columns_name
@@ -272,3 +318,48 @@ def agg_cat_stat_in_cells(
         _df_result = _df_result[order_cat_columns]
 
     return _df_result
+
+
+def create_matrix_cats(
+    df: pd.DataFrame,
+    plot_cat_col: str,
+    cat_cols: List[str],
+    val_col: str,
+    agg_method: str,
+) -> List[Tuple[Union[int, str], pd.DataFrame]]:
+    """Function for creating matrix with values equal to aggregation
+    over some categories
+
+    Args:
+        df (pd.DataFrame): DF input containing data to aggregate
+        plot_cat_col (str): Category column for difference matrices
+        cat_cols (List[str]): Category columns in a matrix to aggregate
+        val_col (str): Column name of the value to aggregat
+        agg_method (str): Aggregation method. E.g. Median or Sum
+
+    Returns:
+        List[Tuple[Union[int,str],pd.DataFrame]]: Output with Tuples containing category name and matrix
+    """
+    # Consider to implement in class attribute/method
+    _plot_cats = df[plot_cat_col].unique()
+
+    # Compute the aggregation
+    _df_aggregated = getattr(
+        df.groupby([plot_cat_col, *cat_cols], as_index=False)[val_col], agg_method
+    )()
+
+    # Query
+    _df_results = map(
+        lambda cat: _df_aggregated.query(f"{plot_cat_col} == '{cat}'").drop(
+            columns=[plot_cat_col]
+        ),
+        _plot_cats,
+    )
+
+    # Pivot to get matrix
+    _df_results = map(
+        lambda _df: _df.pivot(index=cat_cols[0], columns=cat_cols[1], values=val_col),
+        _df_results,
+    )
+
+    return list(zip(_plot_cats, _df_results))

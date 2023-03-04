@@ -2,12 +2,19 @@
 """
 
 from collections import Counter
-from typing import Any, List, Tuple, Optional
+from itertools import chain
+from typing import Any, List, Tuple, Optional, Union, Dict, Iterable
 from matplotlib.axes import Axes
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
+import matplotlib.cm as cmx
+from matplotlib import colors
+from matplotlib.colors import LinearSegmentedColormap
+
 import pandas as pd
 import seaborn as sns
+
+import plotly.graph_objects as go
 
 from exploratory_analysis import basic_functions as bf
 
@@ -44,13 +51,13 @@ def piechart_list(
         list_axes (List[Axes]): _description_
     """
 
-    colors = sns.color_palette("pastel")[0:5]
+    colors_from_palette = sns.color_palette("pastel")[0:5]
 
     for ax, data in zip(list_axes, li_data):
         ax.pie(
             x=data,
             labels=labels,
-            colors=colors,
+            colors=colors_from_palette,
             explode=bf.set_zero_if_below(data / sum(data), 0.1),
             autopct="%.0f%%",
             pctdistance=1.1,
@@ -305,3 +312,235 @@ def plot_box_count(
     count_plot.get_legend().remove()
 
     plt.show()
+
+
+def plot_heat_map_from_matrices(
+    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]], plot_title: str
+) -> None:
+    """Given matrices, plot multiple heat maps
+
+    Args:
+        dfs_matrix (List[Tuple[Union[str,int],pd.DataFrame]]): Inpot aggregation matrices
+        plot_title (str): Title of the plot
+    """
+
+    # Has to be adjustable later
+    cmap = LinearSegmentedColormap.from_list(
+        "rg", ["r", "y", "g", "g", "g", "g"], N=256
+    )
+
+    fig, axs = plt.subplots(nrows=len(dfs_matrix), figsize=(30, 15), sharex="row")
+    fig.suptitle(plot_title, fontsize=25)
+
+    config_heatmap = {
+        "cmap": cmap,
+        "annot": True,
+        "linewidth": 0.5,
+        "vmin": 0,
+        "vmax": 4,
+        "square": True,
+        "fmt": ".2f",
+    }
+    font_config = {"fontweight": "bold", "fontsize": 20, "pad": 15}
+
+    for idx, (_cat_matrix, _df_matrix) in enumerate(dfs_matrix):
+        sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
+        axs[idx].set_title(_cat_matrix, **font_config)
+
+    fig.subplots_adjust(wspace=0.01)
+
+    plt.show()
+
+
+## Sankey Diagram
+
+
+def create_color_from_values(values: List[float], color_palette: str) -> List[float]:
+    """Create colors from number of values
+
+    Args:
+        values (List[float]): List of values to transform
+        color_palette (str): Color palette name, e.g. 'RdYlGn' and 'Spectral'
+
+    Returns:
+        List[float]: List of colors
+    """
+
+    norm = colors.Normalize(vmin=min(values), vmax=max(values))
+
+    cmap = cmx.get_cmap(color_palette)
+    scalar_map = cmx.ScalarMappable(norm=norm, cmap=cmap)
+
+    _result = map(scalar_map.to_rgba, values)
+
+    return list(map(colors.to_hex, _result))
+
+
+def _extract_source_target_label(
+    df: pd.DataFrame, source_target: Tuple[str, str]
+) -> Dict[str, List[Union[str, int]]]:
+    """Extract the source and target labels from a DF
+
+    Args:
+        df (pd.DataFrame): DF input
+        source_target (Tuple[str,str]): (source column name, target column name)
+
+    Returns:
+        Dict[str,List[Union[str,int]]]:
+    """
+    return {
+        source_target[0]: list(df[source_target[0]].unique()),
+        source_target[1]: list(df[source_target[1]].unique()),
+    }
+
+
+def _create_colors_from_data(
+    data_tuple: Tuple[Any, Any, Union[float, int]],
+    color_palette: Optional[str] = "RdYlGn",
+) -> List[str]:
+    """From data of the form (..., ..., value) create colors from the values
+
+    Args:
+        data_tuple (Tuple[Any,Any,Union[float,int]]): Data in form of list of tuples
+        color_palette (Optional[str], optional): Color palettes. Defaults to "RdYlGn".
+
+    Returns:
+        List[str]: List of color values in hex
+    """
+
+    # Values is in the third entry in each of the tuple
+    _colors = map(lambda x: bf.extract_from_tuple(x, 2), data_tuple)
+
+    # Assign colors to the values - for each sorce target level one crreation
+    # consider to extend
+    return list(map(lambda x: create_color_from_values(x, color_palette), _colors))
+
+
+def transform_data_to_source_target(
+    dfs: Iterable[pd.DataFrame], source_target_pairs: Iterable[Tuple[str, str]]
+):
+    """Create source target data with color on values"""
+
+    # Extract data from dfs
+    _data = list(map(bf.df_to_list, dfs))
+
+    _colors = _create_colors_from_data(data_tuple=_data)
+
+    # # Values is in the third entry in each of the tuple
+    # _colors = map(lambda x: extract_from_tuple(x,2), _data)
+
+    # # Assign colors to the values - for each sorce target level one crreation
+    # # consider to extend
+    # _colors = map(lambda x: create_color_from_values(x,"RdYlGn"),_colors)
+
+    # Unpack the data to a long vector and color
+    data_coloured = zip(*map(lambda x: list(chain.from_iterable(x)), [_data, _colors]))
+    data_coloured = [(*element[0], element[1]) for element in data_coloured]
+
+    ## Create label for the nodes
+    _dfs_cat = zip(dfs, source_target_pairs)
+
+    _source_target_labels = map(
+        lambda _tuple: _extract_source_target_label(_tuple[0], _tuple[1]), _dfs_cat
+    )
+
+    # Merging dict of labels and collect values on same keys into a list
+    _source_target_labels = bf.merge_dicts_into_list_values(_source_target_labels)
+
+    # drop duplicates in each of the lists
+    # _source_target_labels = map(lambda x: list(set(x)), _source_target_labels.values())
+    label_categorized = {
+        key: list(set(value)) for key, value in _source_target_labels.items()
+    }
+
+    return data_coloured, label_categorized
+
+
+def df_to_dag(
+    df: pd.DataFrame, categories: List[Tuple[str, str]], col_val: str
+) -> Tuple[
+    List[Tuple[str, str, float, str]], Dict[Union[str, int], List[Union[str, int]]]
+]:
+    """Function to create directed acyclic graph from given categories specified
+    by list of (source,target)
+    """
+    _levels_df = map(
+        lambda x: df.groupby(list(x), as_index=False)[col_val].sum(), categories
+    )
+    return transform_data_to_source_target(list(_levels_df), categories)
+
+
+def plot_sankey(
+    label: List[str],
+    color_node: List[str],
+    source: List[Union[str, int]],
+    target: List[Union[str, int]],
+    values: List[float],
+    color_conn: List[str],
+    title: str,
+) -> None:
+    """
+    Plot Sankey Diagram
+    """
+    fig = go.Figure(
+        data=[
+            go.Sankey(
+                valueformat=".0f",
+                valuesuffix="Mill R",
+                node=dict(
+                    pad=5,
+                    thickness=10,
+                    line=dict(color="black", width=0.05),
+                    label=label,
+                    # x=[0.1, 0.1, 0.1, 0.1, 0.1, 0.3,0.3,0.3,0.3,0.3,0.3,0.5], # Need to adjust positions
+                    # y=[0.1, 0.3, 0.4, 0.5, 0.6, 0.1,0.3,0.4,0.5,0.6,0.7,0.4],
+                    color=color_node,
+                ),
+                link=dict(
+                    arrowlen=30,
+                    source=source,  # indices correspond to source node wrt to label
+                    target=target,
+                    value=values,
+                    color=color_conn,
+                ),
+            )
+        ]
+    )
+
+    fig.update_layout(
+        hovermode="x",
+        title=title,
+        font=dict(size=10, color="black"),
+        width=1300,
+        height=700,
+    )
+
+    fig.show()
+
+    return None
+
+
+def create_sankey_from_df(
+    df: pd.DataFrame, categories: List[Tuple[str, str]], col_val: str, title: str
+) -> None:
+    """Master function for creating Sankey diagram from dat by aggregation"""
+    data_coloured, label_categorized = df_to_dag(df, categories, col_val)
+
+    # # TODO: Involve order services
+
+    # label_categorized["day_name"]=ea.sort_week_day(label_categorized["day_name"])
+    # label_categorized["month"]=ea.sort_month(label_categorized["month"])
+    # label_categorized["year"]=sorted(label_categorized["year"])
+
+    label = list(chain.from_iterable(label_categorized.values()))
+
+    source = [label.index(x[0]) for x in data_coloured]
+
+    target = [label.index(x[1]) for x in data_coloured]
+    values = [x[2] for x in data_coloured]
+    color_conn = [x[3] for x in data_coloured]
+    color_node = ["#a6cee3"] * len(label)
+
+    plot_sankey(label, color_node, source, target, values, color_conn, title)
+
+    return None
