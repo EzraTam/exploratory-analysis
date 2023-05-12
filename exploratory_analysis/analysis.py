@@ -17,12 +17,15 @@ import plotly.graph_objects as go
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif
 
+from exploratory_analysis.preprocessing import one_hot_encode
 
 def show_corr_matrix_filtered(
     df_input: pd.DataFrame,
-    dummies_dict: Dict[str, List[str]],
-    threshold_absolute_correlation: Optional[float] = 0.1,
-    by_which: Optional[str] = "seaborn"
+    li_one_hot : Optional[List[str]]=None,
+    threshold_absolute_correlation : Optional[float] = 0.1,
+    by_which: Optional[str] = "seaborn",
+    label_corr:Optional[bool] = False,
+    round_label:Optional[int] = None
 ) -> pd.DataFrame:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
@@ -37,28 +40,42 @@ def show_corr_matrix_filtered(
     Returns:
         (pd.DataFrame): Resulting filtered Correlation matrix
     """
-    df_corr = df_input.corr(numeric_only=True)
-    for one_hot_cols in dummies_dict.values():
+
+    if li_one_hot is not None:
+        _one_hot_result=one_hot_encode(df_input=df_input,li_one_hot=li_one_hot)
+        _df_input_one_hot=_one_hot_result["df_result"]
+        _dummies_dict=_one_hot_result["dummies_dict"]
+
+    _df_corr = _df_input_one_hot.corr(numeric_only=True)
+
+    if round_label is not None:
+        _df_corr=_df_corr.round(round_label)
+
+    # Delete pairwise correlation between one-hot-encode columns
+    for one_hot_cols in _dummies_dict.values():
         for col_1, col_2 in product(one_hot_cols, one_hot_cols):
-            df_corr.at[col_1, col_2] = np.nan
-            df_corr.at[col_2, col_1] = np.nan
-    filtered_df = df_corr[
+            _df_corr.at[col_1, col_2] = np.nan
+            _df_corr.at[col_2, col_1] = np.nan
+    
+    # Filter correlation matrix
+    filtered_df = _df_corr[
         (
-            (df_corr >= threshold_absolute_correlation)
-            | (df_corr <= -threshold_absolute_correlation)
+            (_df_corr >= threshold_absolute_correlation)
+            | (_df_corr <= -threshold_absolute_correlation)
         )
-        & (df_corr != 1.000)
+        & (_df_corr != 1)
     ]
+
     filtered_df = filtered_df.dropna(how="all").dropna(axis=1, how="all")
     if by_which == "seaborn":
         sns.set()
         plt.figure(figsize=(30, 10))
         sns.heatmap(
-            filtered_df, annot=True, cmap="Reds", linewidths=0.5, linecolor="gray"
+            filtered_df, annot=label_corr, cmap="Reds", linewidths=0.5, linecolor="gray"
         )
         plt.show()
     elif by_which == "plotly":
-        fig = px.imshow(filtered_df,labels={"x":"x-Feature ", "y":"y-Feature", "color":"Correlation Coefficient"}, width=1000, aspect= "auto")
+        fig = px.imshow(filtered_df,labels={"x":"x-Feature ", "y":"y-Feature", "color":"Correlation Coefficient"}, text_auto=label_corr, width=1000, aspect= "auto")
         fig.update_xaxes(tickangle=45,ticksuffix = "  ")
         fig.update_yaxes(tickangle=-45,ticksuffix = "  ")
         fig.update_layout(
@@ -70,7 +87,6 @@ def show_corr_matrix_filtered(
         fig.show()
 
     return filtered_df
-
 
 def show_graph_with_labels(
     adjacency_matrix: np.ndarray,
