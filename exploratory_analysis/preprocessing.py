@@ -145,14 +145,9 @@ def drop_and_one_hot(
     """
     df_result = df_input.drop(columns=li_drop)
     dummies_dict = {}
-    for _feat in li_one_hot:
-        if isinstance(_feat,str):
-            _col_nm = _feat
-            _prefix = _feat
-        elif isinstance(_feat,Tuple):
-            _col_nm, _prefix = _feat
-        dummies_df = pd.get_dummies(df_result[_col_nm], prefix=_prefix)
-        dummies_dict[_col_nm] = list(dummies_df.columns)
+    for feat in li_one_hot:
+        dummies_df = pd.get_dummies(df_result[feat], prefix=feat)
+        dummies_dict[feat] = list(dummies_df.columns)
         df_result = df_result.join(dummies_df)
     return dict(df_result=df_result, dummies_dict=dummies_dict)
 
