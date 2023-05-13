@@ -1,7 +1,7 @@
 """Module for exploring the distribution
 of data
 """
-from typing import Optional
+from typing import Optional, Dict
 
 import pandas as pd
 from sklearn.neighbors import KernelDensity
@@ -38,7 +38,7 @@ def find_local_kde_extrema(
         np.array(data).reshape(-1, 1)
     )
     # Generate x values for evaluating the KDE
-    x_values = np.linspace(min(data), max(data), 100)
+    x_values = np.linspace(min(data), max(data), resolution)
 
     kde_values = np.exp(kde.score_samples(x_values.reshape(-1, 1)))
     _comparator = {"maxima": np.greater, "minima": np.less}[how]
