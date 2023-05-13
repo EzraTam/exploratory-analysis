@@ -27,6 +27,7 @@ def show_corr_matrix_filtered(
     by_which: Optional[str] = "seaborn",
     label_corr: Optional[bool] = False,
     round_label: Optional[int] = None,
+    title_x_axis : Optional[str] = None, title_y_axis: Optional[str] = None
 ) -> pd.DataFrame:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
@@ -76,6 +77,10 @@ def show_corr_matrix_filtered(
         sns.heatmap(
             filtered_df, annot=label_corr, cmap="Reds", linewidths=0.5, linecolor="gray"
         )
+        if title_x_axis is not None:
+            plt.xlabel(title_x_axis)
+        if title_y_axis is not None:
+            plt.ylabel(title_y_axis)
         plt.show()
 
     ## Plotly    
@@ -91,7 +96,15 @@ def show_corr_matrix_filtered(
             width=1000,
             aspect="auto",
         )
-        fig.update_xaxes(tickangle=45, ticksuffix="  ")
+        _arg_xaxes=dict(tickangle=45, ticksuffix="  ")
+        if title_x_axis is not None:
+            _arg_xaxes={**_arg_xaxes, "title": title_x_axis}
+        fig.update_xaxes(**_arg_xaxes)
+
+        _arg_yaxes=dict(tickangle=45, ticksuffix="  ")
+        if title_x_axis is not None:
+            _arg_yaxes={**_arg_yaxes, "title": title_y_axis}
+        fig.update_yaxes(**_arg_yaxes)
         fig.update_yaxes(tickangle=-45, ticksuffix="  ")
         fig.update_layout(
             title="Correlation",
