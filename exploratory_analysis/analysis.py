@@ -257,6 +257,8 @@ class GraphFromAdjacencyMatrix:
         figsize: Optional[Tuple[int, int]] = (15, 15),
         font_sizes: Optional[Dict[str, int]] = None,
     ) -> None:
+        """ Plot method
+        """
 
         if font_sizes is None:
             font_sizes = {"node": 10, "edge": 8}
@@ -346,10 +348,10 @@ class GraphFromAdjacencyMatrix:
 
         edge_text = []
         for edge in self.nx_graph.edges():
-            x0, y0 = self.nx_graph.nodes[edge[0]]["pos"]
-            x1, y1 = self.nx_graph.nodes[edge[1]]["pos"]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
+            _x0, _y0 = self.nx_graph.nodes[edge[0]]["pos"]
+            _x1, _y1 = self.nx_graph.nodes[edge[1]]["pos"]
+            edge_x.extend([_x0, _x1, None])
+            edge_y.extend([_y0, _y1, None])
             edge_text.append(
                 f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}'
             )
@@ -368,7 +370,8 @@ class GraphFromAdjacencyMatrix:
         return edge_trace
 
     def plot_plotly(self) -> None:
-
+        """ Plot by plotly
+        """
         fig = go.Figure(
             data=[self._create_plotly_nodes(), self._create_plotly_edges()],
             layout=go.Layout(
