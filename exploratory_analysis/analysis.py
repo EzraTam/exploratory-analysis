@@ -68,6 +68,8 @@ def show_corr_matrix_filtered(
     ]
 
     filtered_df = filtered_df.dropna(how="all").dropna(axis=1, how="all")
+    
+    ## Seaborn 
     if by_which == "seaborn":
         sns.set()
         plt.figure(figsize=(30, 10))
@@ -75,6 +77,8 @@ def show_corr_matrix_filtered(
             filtered_df, annot=label_corr, cmap="Reds", linewidths=0.5, linecolor="gray"
         )
         plt.show()
+
+    ## Plotly    
     elif by_which == "plotly":
         fig = px.imshow(
             filtered_df,
