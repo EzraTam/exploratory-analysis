@@ -19,13 +19,14 @@ from sklearn.feature_selection import f_classif
 
 from exploratory_analysis.preprocessing import one_hot_encode
 
+
 def show_corr_matrix_filtered(
     df_input: pd.DataFrame,
-    li_one_hot : Optional[List[str]]=None,
-    threshold_absolute_correlation : Optional[float] = 0.1,
+    li_one_hot: Optional[List[str]] = None,
+    threshold_absolute_correlation: Optional[float] = 0.1,
     by_which: Optional[str] = "seaborn",
-    label_corr:Optional[bool] = False,
-    round_label:Optional[int] = None
+    label_corr: Optional[bool] = False,
+    round_label: Optional[int] = None,
 ) -> pd.DataFrame:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
@@ -42,21 +43,21 @@ def show_corr_matrix_filtered(
     """
 
     if li_one_hot is not None:
-        _one_hot_result=one_hot_encode(df_input=df_input,li_one_hot=li_one_hot)
-        _df_input_one_hot=_one_hot_result["df_result"]
-        _dummies_dict=_one_hot_result["dummies_dict"]
+        _one_hot_result = one_hot_encode(df_input=df_input, li_one_hot=li_one_hot)
+        _df_input_one_hot = _one_hot_result["df_result"]
+        _dummies_dict = _one_hot_result["dummies_dict"]
 
     _df_corr = _df_input_one_hot.corr(numeric_only=True)
 
     if round_label is not None:
-        _df_corr=_df_corr.round(round_label)
+        _df_corr = _df_corr.round(round_label)
 
     # Delete pairwise correlation between one-hot-encode columns
     for one_hot_cols in _dummies_dict.values():
         for col_1, col_2 in product(one_hot_cols, one_hot_cols):
             _df_corr.at[col_1, col_2] = np.nan
             _df_corr.at[col_2, col_1] = np.nan
-    
+
     # Filter correlation matrix
     filtered_df = _df_corr[
         (
@@ -75,18 +76,29 @@ def show_corr_matrix_filtered(
         )
         plt.show()
     elif by_which == "plotly":
-        fig = px.imshow(filtered_df,labels={"x":"x-Feature ", "y":"y-Feature", "color":"Correlation Coefficient"}, text_auto=label_corr, width=1000, aspect= "auto")
-        fig.update_xaxes(tickangle=45,ticksuffix = "  ")
-        fig.update_yaxes(tickangle=-45,ticksuffix = "  ")
+        fig = px.imshow(
+            filtered_df,
+            labels={
+                "x": "x-Feature ",
+                "y": "y-Feature",
+                "color": "Correlation Coefficient",
+            },
+            text_auto=label_corr,
+            width=1000,
+            aspect="auto",
+        )
+        fig.update_xaxes(tickangle=45, ticksuffix="  ")
+        fig.update_yaxes(tickangle=-45, ticksuffix="  ")
         fig.update_layout(
-            title= "Correlation",
+            title="Correlation",
             font=dict(
                 size=11,
-            )
+            ),
         )
         fig.show()
 
     return filtered_df
+
 
 def show_graph_with_labels(
     adjacency_matrix: np.ndarray,
@@ -303,7 +315,7 @@ class GraphFromAdjacencyMatrix:
         node_text = []
 
         node_adjacencies = []
-        for node, adjacencies in enumerate(self.nx_graph.adjacency()):
+        for adjacencies in self.nx_graph.adjacency():
             node_adjacencies.append(len(adjacencies[1]))
             node_text.append("# of connections: " + str(len(adjacencies[1])))
 
