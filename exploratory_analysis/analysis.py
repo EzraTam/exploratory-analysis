@@ -22,7 +22,7 @@ from exploratory_analysis.preprocessing import one_hot_encode
 
 def show_corr_matrix_filtered(
     df_input: pd.DataFrame,
-    li_one_hot: Optional[List[str]] = None,
+    li_one_hot: Optional[Union[List[str],Dict[str,str]]] = None,
     threshold_absolute_correlation: Optional[float] = 0.1,
     by_which: Optional[str] = "seaborn",
     label_corr: Optional[bool] = False,

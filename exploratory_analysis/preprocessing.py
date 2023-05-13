@@ -93,7 +93,7 @@ def year_month_day_col(dataframe: pd.DataFrame, col: str) -> pd.DataFrame:
 
 
 def one_hot_encode(
-    df_input: pd.DataFrame, li_one_hot: List[str], drop: Optional[bool] = True
+    df_input: pd.DataFrame, li_one_hot: Union[List[str],Tuple[str,str]], drop: Optional[bool] = True
 ) -> Dict[str, Union[pd.DataFrame, Dict[str, List[str]]]]:
     """Drop and one hot encode columns of a dataframe
     Args:
@@ -110,12 +110,19 @@ def one_hot_encode(
     """
     df_result = df_input
     dummies_dict = {}
-    for feat in li_one_hot:
-        dummies_df = pd.get_dummies(df_result[feat], prefix=feat)
-        dummies_dict[feat] = list(dummies_df.columns)
+    for _feat in li_one_hot:
+        if isinstance(_feat,str):
+            _col_nm = _feat
+            _prefix = _feat
+            _prefix_sp="_"
+        elif isinstance(_feat,Tuple):
+            _col_nm, _prefix = _feat
+            _prefix_sp=""
+        dummies_df = pd.get_dummies(df_result[_col_nm], prefix=_prefix,prefix_sep=_prefix_sp)
+        dummies_dict[_col_nm] = list(dummies_df.columns)
         df_result = df_result.join(dummies_df)
-    if drop:
-        df_result = df_result.drop(columns=li_one_hot)
+        if drop:
+            df_result = df_result.drop(columns=[_col_nm])
     return dict(df_result=df_result, dummies_dict=dummies_dict)
 
 
@@ -138,9 +145,14 @@ def drop_and_one_hot(
     """
     df_result = df_input.drop(columns=li_drop)
     dummies_dict = {}
-    for feat in li_one_hot:
-        dummies_df = pd.get_dummies(df_result[feat], prefix=feat)
-        dummies_dict[feat] = list(dummies_df.columns)
+    for _feat in li_one_hot:
+        if isinstance(_feat,str):
+            _col_nm = _feat
+            _prefix = _feat
+        elif isinstance(_feat,Tuple):
+            _col_nm, _prefix = _feat
+        dummies_df = pd.get_dummies(df_result[_col_nm], prefix=_prefix)
+        dummies_dict[_col_nm] = list(dummies_df.columns)
         df_result = df_result.join(dummies_df)
     return dict(df_result=df_result, dummies_dict=dummies_dict)
 
