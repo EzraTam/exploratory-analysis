@@ -28,7 +28,7 @@ def show_corr_matrix_filtered(
     label_corr: Optional[bool] = False,
     round_label: Optional[int] = None,
     title_x_axis : Optional[str] = None, title_y_axis: Optional[str] = None
-) -> pd.DataFrame:
+) -> Dict[str,pd.DataFrame]:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
 
@@ -44,9 +44,9 @@ def show_corr_matrix_filtered(
     """
 
     if li_one_hot is not None:
-        _one_hot_result = one_hot_encode(df_input=df_input, li_one_hot=li_one_hot)
-        _df_input_one_hot = _one_hot_result["df_result"]
-        _dummies_dict = _one_hot_result["dummies_dict"]
+        one_hot_result = one_hot_encode(df_input=df_input, li_one_hot=li_one_hot)
+        _df_input_one_hot = one_hot_result["df_result"]
+        _dummies_dict = one_hot_result["dummies_dict"]
 
     _df_corr = _df_input_one_hot.corr(numeric_only=True)
 
@@ -114,7 +114,7 @@ def show_corr_matrix_filtered(
         )
         fig.show()
 
-    return filtered_df
+    return dict(corr_filtered=filtered_df, one_hot_result=one_hot_result)
 
 
 def show_graph_with_labels(
