@@ -2,13 +2,17 @@
 of a DF
 """
 from __future__ import annotations
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Union, Tuple
 from itertools import product
 import numpy as np
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
+
+
+import plotly.express as px
+import plotly.graph_objects as go
 
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif
@@ -18,6 +22,7 @@ def show_corr_matrix_filtered(
     df_input: pd.DataFrame,
     dummies_dict: Dict[str, List[str]],
     threshold_absolute_correlation: Optional[float] = 0.1,
+    by_which: Optional[str] = "seaborn"
 ) -> pd.DataFrame:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
@@ -45,10 +50,25 @@ def show_corr_matrix_filtered(
         & (df_corr != 1.000)
     ]
     filtered_df = filtered_df.dropna(how="all").dropna(axis=1, how="all")
-    sns.set()
-    plt.figure(figsize=(30, 10))
-    sns.heatmap(filtered_df, annot=True, cmap="Reds", linewidths=0.5, linecolor="gray")
-    plt.show()
+    if by_which == "seaborn":
+        sns.set()
+        plt.figure(figsize=(30, 10))
+        sns.heatmap(
+            filtered_df, annot=True, cmap="Reds", linewidths=0.5, linecolor="gray"
+        )
+        plt.show()
+    elif by_which == "plotly":
+        fig = px.imshow(filtered_df,labels={"x":"x-Feature ", "y":"y-Feature", "color":"Correlation Coefficient"}, width=1000, aspect= "auto")
+        fig.update_xaxes(tickangle=45,ticksuffix = "  ")
+        fig.update_yaxes(tickangle=-45,ticksuffix = "  ")
+        fig.update_layout(
+            title= "Correlation",
+            font=dict(
+                size=11,
+            )
+        )
+        fig.show()
+
     return filtered_df
 
 
@@ -125,6 +145,226 @@ def show_graph_with_labels(
         font_color="b",
     )
     plt.show()
+
+    return graph
+
+
+class GraphFromAdjacencyMatrix:
+    """
+    Usage:
+    def _coloring_by_sign(num_input: float)->str:
+    if num_input<= 0:
+         return 'r'
+    return 'g'
+
+    GraphObject=GraphFromAdjacencyMatrix(
+        adjacency_matrix=adjacency_matrix,
+        node_labels=dict_labels,centrality='eigenvector',
+        func_edge_coloring=_coloring_by_sign,
+        func_edge_weight=lambda val: abs(val * 10),
+        func_edge_label=lambda val: np.round(val, 2))
+    """
+
+    def __init__(
+        self,
+        adjacency_matrix: np.ndarray,
+        node_labels: Dict[int, str],
+        func_edge_coloring: Callable[[float], str],
+        func_edge_weight: Callable[[float], float],
+        func_edge_label: Callable[[float], Union[str, int]],
+        adjust_node_size_from_centrality: Optional[bool] = True,
+        centrality: Optional[str] = "eigenvector",
+    ) -> None:
+        self.adjacency_matrix = adjacency_matrix
+        self.centrality = centrality
+
+        nodes = list(range(len(adjacency_matrix)))
+        rows, cols = np.where(adjacency_matrix != 0)
+        edges = zip(rows.tolist(), cols.tolist())
+
+        # Create graph
+        self.nx_graph = nx.Graph()
+        self.nx_graph.add_nodes_from(nodes)
+
+        for _edge in edges:
+            _val_adjacency = adjacency_matrix[_edge]
+            self.nx_graph.add_edge(
+                *_edge,
+                color=func_edge_coloring(_val_adjacency),
+                weight=func_edge_weight(_val_adjacency),
+                label=func_edge_label(_val_adjacency),
+            )
+
+        # Add node label
+        nx.set_node_attributes(self.nx_graph, node_labels, name="label")
+
+        # Compute Position
+        # Apply algorithm to compute best node placement
+        self.pos = nx.spring_layout(self.nx_graph)
+
+        # Add position to graph object
+        for _node, _pos in self.pos.items():
+            self.nx_graph.nodes[_node]["pos"] = _pos
+
+        # add edge positions to the graph object
+        for _edge in self.nx_graph.edges:
+            self.nx_graph.edges[_edge]["pos"] = (self.pos[_edge[0]], self.pos[_edge[1]])
+
+        if adjust_node_size_from_centrality is None:
+            pass
+
+        centrality_method = dict(
+            degree="degree_centrality",
+            load="load_centrality",
+            eigenvector="eigenvector_centrality",
+        )
+        nx.set_node_attributes(
+            self.nx_graph,
+            getattr(nx, centrality_method[centrality])(self.nx_graph),
+            name="centrality",
+        )
+
+    def plot_sns(
+        self,
+        figsize: Optional[Tuple[int, int]] = (15, 15),
+        font_sizes: Optional[Dict[str, int]] = None,
+    ) -> None:
+
+        if font_sizes is None:
+            font_sizes = {"node": 10, "edge": 8}
+
+        plt.figure(figsize=figsize)
+
+        _pos = list(nx.get_node_attributes(self.nx_graph, "pos").values())
+
+        nx.draw(
+            self.nx_graph,
+            pos=_pos,
+            labels=nx.get_node_attributes(self.nx_graph, "label"),
+            node_size=list(nx.get_node_attributes(self.nx_graph, "size").values()),
+            with_labels=True,
+            edge_color=list(nx.get_edge_attributes(self.nx_graph, "color").values()),
+            width=list(nx.get_edge_attributes(self.nx_graph, "weight").values()),
+            font_size=font_sizes["node"],
+        )
+        nx.draw_networkx_edge_labels(
+            self.nx_graph,
+            pos=_pos,
+            edge_labels=nx.get_edge_attributes(self.nx_graph, "label"),
+            font_size=font_sizes["edge"],
+            font_color="b",
+        )
+        plt.show()
+
+        return None
+
+    def _create_plotly_nodes(self) -> None:
+
+        node_trace = go.Scatter(
+            x=[
+                _pos[0]
+                for _pos in nx.get_node_attributes(self.nx_graph, "pos").values()
+            ],
+            y=[
+                _pos[1]
+                for _pos in nx.get_node_attributes(self.nx_graph, "pos").values()
+            ],
+            mode="markers",
+            hoverinfo="text",
+            marker=dict(
+                showscale=True,
+                colorscale="YlGnBu",
+                reversescale=True,
+                color=[],
+                size=10,
+                colorbar=dict(
+                    thickness=15, title="Centrality", xanchor="left", titleside="right"
+                ),
+                line_width=2,
+            ),
+        )
+
+        node_text = []
+
+        node_adjacencies = []
+        for node, adjacencies in enumerate(self.nx_graph.adjacency()):
+            node_adjacencies.append(len(adjacencies[1]))
+            node_text.append("# of connections: " + str(len(adjacencies[1])))
+
+        print(nx.get_node_attributes(self.nx_graph, "size"))
+
+        node_trace.marker.color = list(
+            nx.get_node_attributes(self.nx_graph, "centrality").values()
+        )
+        node_trace.marker.size = [
+            centrality * 100
+            for centrality in nx.get_node_attributes(
+                self.nx_graph, "centrality"
+            ).values()
+        ]
+        node_trace.text = [
+            f"Graph Centrality: {centrality:.2f}"
+            for centrality in nx.get_node_attributes(
+                self.nx_graph, "centrality"
+            ).values()
+        ]
+
+        return node_trace
+
+    def _create_plotly_edges(self) -> None:
+
+        edge_x = []
+        edge_y = []
+
+        edge_text = []
+        for edge in self.nx_graph.edges():
+            x0, y0 = self.nx_graph.nodes[edge[0]]["pos"]
+            x1, y1 = self.nx_graph.nodes[edge[1]]["pos"]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+            edge_text.append(
+                f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}'
+            )
+
+        edge_trace = go.Scatter(
+            x=edge_x,
+            y=edge_y,
+            line=dict(width=0.5, color="#888"),
+            hoverinfo="text",
+            mode="lines",
+        )
+
+        # edge_trace.text=edge_text
+        # edge_trace.marker.size = list(nx.get_edge_attributes(self.nx_graph,"weight").values())
+
+        return edge_trace
+
+    def plot_plotly(self) -> None:
+
+        fig = go.Figure(
+            data=[self._create_plotly_nodes(), self._create_plotly_edges()],
+            layout=go.Layout(
+                title="<br>Hier ein Titel",
+                titlefont_size=16,
+                showlegend=False,
+                hovermode="closest",
+                margin=dict(b=20, l=5, r=5, t=40),
+                annotations=[
+                    dict(
+                        text="Hier kann ein Text stehen",
+                        showarrow=False,
+                        xref="paper",
+                        yref="paper",
+                        x=0.005,
+                        y=-0.002,
+                    )
+                ],
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            ),
+        )
+
+        fig.show()
 
 
 class CorrelationFeatures:
@@ -253,7 +493,7 @@ class FeatureSelector:
 
     def __init__(
         self,
-        df: pd.DataFrame,
+        df: pd.DataFrame,  # pylint: disable=invalid-name
         target: str,
         num_feature_keep: Optional[int] = None,  # pylint: disable=invalid-name
     ) -> None:
