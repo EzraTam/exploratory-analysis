@@ -195,7 +195,6 @@ def show_graph_with_labels(
 
     return graph
 
-
 class GraphFromAdjacencyMatrix:
     """
     Usage:
@@ -214,19 +213,33 @@ class GraphFromAdjacencyMatrix:
 
     def __init__(
         self,
-        adjacency_matrix: np.ndarray,
-        node_labels: Dict[int, str],
-        func_edge_coloring: Callable[[float], str],
-        func_edge_weight: Callable[[float], float],
-        func_edge_label: Callable[[float], Union[str, int]],
+        df_adjacency: Optional[pd.DataFrame] = None,
+        adjacency_matrix: Optional[np.ndarray] = None,
+        node_labels: Optional[Dict[int, str]] = None,
+        func_edge_coloring: Optional[Callable[[float], str]] = lambda val: "red"
+        if val <= 0
+        else "green",
+        func_edge_weight: Optional[Callable[[float], float]] = lambda val: abs(
+            val * 2
+        ),
+        func_edge_label: Optional[
+            Callable[[float], Union[str, int]]
+        ] = lambda val: np.round(val, 2),
         adjust_node_size_from_centrality: Optional[bool] = True,
         centrality: Optional[str] = "eigenvector",
+        optimal_distance_nodes: Optional[float] = None
     ) -> None:
         self.adjacency_matrix = adjacency_matrix
         self.centrality = centrality
+        if df_adjacency is not None:
+            node_labels = {
+                list(df_adjacency.columns).index(col): col
+                for col in list(df_adjacency.columns)
+            }
+            self.adjacency_matrix = df_adjacency.to_numpy()
 
-        nodes = list(range(len(adjacency_matrix)))
-        rows, cols = np.where(adjacency_matrix != 0)
+        nodes = list(range(len(self.adjacency_matrix)))
+        rows, cols = np.where(self.adjacency_matrix != 0)
         edges = zip(rows.tolist(), cols.tolist())
 
         # Create graph
@@ -234,7 +247,7 @@ class GraphFromAdjacencyMatrix:
         self.nx_graph.add_nodes_from(nodes)
 
         for _edge in edges:
-            _val_adjacency = adjacency_matrix[_edge]
+            _val_adjacency = self.adjacency_matrix[_edge]
             self.nx_graph.add_edge(
                 *_edge,
                 color=func_edge_coloring(_val_adjacency),
@@ -247,7 +260,7 @@ class GraphFromAdjacencyMatrix:
 
         # Compute Position
         # Apply algorithm to compute best node placement
-        self.pos = nx.spring_layout(self.nx_graph)
+        self.pos = nx.spring_layout(self.nx_graph, k=optimal_distance_nodes)
 
         # Add position to graph object
         for _node, _pos in self.pos.items():
@@ -276,8 +289,7 @@ class GraphFromAdjacencyMatrix:
         figsize: Optional[Tuple[int, int]] = (15, 15),
         font_sizes: Optional[Dict[str, int]] = None,
     ) -> None:
-        """ Plot method
-        """
+        """Plot method"""
 
         if font_sizes is None:
             font_sizes = {"node": 10, "edge": 8}
@@ -336,11 +348,19 @@ class GraphFromAdjacencyMatrix:
         node_text = []
 
         node_adjacencies = []
+        _label_names=nx.get_node_attributes(self.nx_graph, "label")
         for adjacencies in self.nx_graph.adjacency():
             node_adjacencies.append(len(adjacencies[1]))
-            node_text.append("# of connections: " + str(len(adjacencies[1])))
+            _node_text = f"Node Name: {_label_names[adjacencies[0]]}<br>"
+            _node_text += f"# of connections: {len(adjacencies[1])}<br>"
+            node_text.append(_node_text)
 
-        print(nx.get_node_attributes(self.nx_graph, "size"))
+        node_text=[
+            _node_text + f"Centrality: {centrality:.2f}"
+            for centrality,_node_text in zip(nx.get_node_attributes(
+                self.nx_graph, "centrality"
+            ).values(),node_text)
+        ]
 
         node_trace.marker.color = list(
             nx.get_node_attributes(self.nx_graph, "centrality").values()
@@ -351,12 +371,7 @@ class GraphFromAdjacencyMatrix:
                 self.nx_graph, "centrality"
             ).values()
         ]
-        node_trace.text = [
-            f"Graph Centrality: {centrality:.2f}"
-            for centrality in nx.get_node_attributes(
-                self.nx_graph, "centrality"
-            ).values()
-        ]
+        node_trace.text = node_text
 
         return node_trace
 
@@ -364,37 +379,61 @@ class GraphFromAdjacencyMatrix:
 
         edge_x = []
         edge_y = []
-
         edge_text = []
+        edge_color= []
+        edge_weight =[]
+        middle_node_x=[]
+        middle_node_y=[]
+        middle_node_text=[]
         for edge in self.nx_graph.edges():
             _x0, _y0 = self.nx_graph.nodes[edge[0]]["pos"]
             _x1, _y1 = self.nx_graph.nodes[edge[1]]["pos"]
-            edge_x.extend([_x0, _x1, None])
-            edge_y.extend([_y0, _y1, None])
+            edge_x.append([_x0, _x1, None])
+            edge_y.append([_y0, _y1, None])
+
             edge_text.append(
                 f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}'
             )
+            middle_node_x.append((_x0+_x1)/2)
+            middle_node_y.append((_y0+_y1)/2)
+            middle_node_text.append(f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}')
+            edge_color.append(
+                nx.get_edge_attributes(self.nx_graph,"color")[edge]
+            )
+            edge_weight.append(
+                nx.get_edge_attributes(self.nx_graph,"weight")[edge]
+            )
 
-        edge_trace = go.Scatter(
-            x=edge_x,
-            y=edge_y,
-            line=dict(width=0.5, color="#888"),
+        middle_node_trace = go.Scatter(
+            x=middle_node_x,
+            y=middle_node_y,
+            text=middle_node_text,
+            mode='markers',
+            hoverinfo='text',
+            marker=go.Marker(
+                opacity=0
+            )
+        )
+            
+        edge_traces = [go.Scatter(
+            x=_x,
+            y=_y,
+            line=dict(width=_weight, color=_color),
             hoverinfo="text",
             mode="lines",
-        )
+        ) for _x,_y,_color,_weight in zip(edge_x,edge_y,edge_color,edge_weight)]
 
-        # edge_trace.text=edge_text
+        for _edge_trace,_text in zip(edge_traces,edge_text):
+            _edge_trace.text=_text
         # edge_trace.marker.size = list(nx.get_edge_attributes(self.nx_graph,"weight").values())
 
-        return edge_trace
+        return {"edges":edge_traces, "middle_nodes":middle_node_trace}
 
-    def plot_plotly(self) -> None:
-        """ Plot by plotly
-        """
+    def plot_plotly(self,plot_title:Optional[str]="") -> None:
+        """Plot by plotly"""
         fig = go.Figure(
-            data=[self._create_plotly_nodes(), self._create_plotly_edges()],
             layout=go.Layout(
-                title="<br>Hier ein Titel",
+                title=plot_title,
                 titlefont_size=16,
                 showlegend=False,
                 hovermode="closest",
@@ -413,6 +452,11 @@ class GraphFromAdjacencyMatrix:
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             ),
         )
+
+        for _edge in self._create_plotly_edges()["edges"]:
+            fig.add_trace(_edge)
+        fig.add_trace(self._create_plotly_edges()["middle_nodes"])
+        fig.add_trace(self._create_plotly_nodes())
 
         fig.show()
 
