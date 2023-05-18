@@ -42,9 +42,10 @@ def show_corr_matrix_filtered(
     Returns:
         (pd.DataFrame): Resulting filtered Correlation matrix
     """
-
+    _df_input_one_hot=df_input
+    one_hot_result=None
     if li_one_hot is not None:
-        one_hot_result = one_hot_encode(df_input=df_input, li_one_hot=li_one_hot)
+        one_hot_result = one_hot_encode(df_input=_df_input_one_hot, li_one_hot=li_one_hot)
         _df_input_one_hot = one_hot_result["df_result"]
         _dummies_dict = one_hot_result["dummies_dict"]
 
@@ -53,11 +54,12 @@ def show_corr_matrix_filtered(
     if round_label is not None:
         _df_corr = _df_corr.round(round_label)
 
-    # Delete pairwise correlation between one-hot-encode columns
-    for one_hot_cols in _dummies_dict.values():
-        for col_1, col_2 in product(one_hot_cols, one_hot_cols):
-            _df_corr.at[col_1, col_2] = np.nan
-            _df_corr.at[col_2, col_1] = np.nan
+    if one_hot_result is not None:
+        # Delete pairwise correlation between one-hot features
+        for one_hot_cols in _dummies_dict.values():
+            for col_1, col_2 in product(one_hot_cols, one_hot_cols):
+                _df_corr.at[col_1, col_2] = np.nan
+                _df_corr.at[col_2, col_1] = np.nan
 
     # Filter correlation matrix
     filtered_df = _df_corr[
