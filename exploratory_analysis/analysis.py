@@ -22,13 +22,14 @@ from exploratory_analysis.preprocessing import one_hot_encode
 
 def show_corr_matrix_filtered(
     df_input: pd.DataFrame,
-    li_one_hot: Optional[Union[List[str],Dict[str,str]]] = None,
+    li_one_hot: Optional[Union[List[str], Dict[str, str]]] = None,
     threshold_absolute_correlation: Optional[float] = 0.1,
     by_which: Optional[str] = "seaborn",
     label_corr: Optional[bool] = False,
     round_label: Optional[int] = None,
-    title_x_axis : Optional[str] = None, title_y_axis: Optional[str] = None
-) -> Dict[str,pd.DataFrame]:
+    title_x_axis: Optional[str] = None,
+    title_y_axis: Optional[str] = None,
+) -> Dict[str, pd.DataFrame]:
     """Show correlation matrix filtered by correlations with absolute value > 0.1
     and no feature self correlation
 
@@ -42,10 +43,12 @@ def show_corr_matrix_filtered(
     Returns:
         (pd.DataFrame): Resulting filtered Correlation matrix
     """
-    _df_input_one_hot=df_input
-    one_hot_result=None
+    _df_input_one_hot = df_input
+    one_hot_result = None
     if li_one_hot is not None:
-        one_hot_result = one_hot_encode(df_input=_df_input_one_hot, li_one_hot=li_one_hot)
+        one_hot_result = one_hot_encode(
+            df_input=_df_input_one_hot, li_one_hot=li_one_hot
+        )
         _df_input_one_hot = one_hot_result["df_result"]
         _dummies_dict = one_hot_result["dummies_dict"]
 
@@ -71,8 +74,8 @@ def show_corr_matrix_filtered(
     ]
 
     filtered_df = filtered_df.dropna(how="all").dropna(axis=1, how="all")
-    
-    ## Seaborn 
+
+    ## Seaborn
     if by_which == "seaborn":
         sns.set()
         plt.figure(figsize=(30, 10))
@@ -85,7 +88,7 @@ def show_corr_matrix_filtered(
             plt.ylabel(title_y_axis)
         plt.show()
 
-    ## Plotly    
+    ## Plotly
     elif by_which == "plotly":
         fig = px.imshow(
             filtered_df,
@@ -98,14 +101,14 @@ def show_corr_matrix_filtered(
             width=1000,
             aspect="auto",
         )
-        _arg_xaxes=dict(tickangle=45, ticksuffix="  ")
+        _arg_xaxes = dict(tickangle=45, ticksuffix="  ")
         if title_x_axis is not None:
-            _arg_xaxes={**_arg_xaxes, "title": title_x_axis}
+            _arg_xaxes = {**_arg_xaxes, "title": title_x_axis}
         fig.update_xaxes(**_arg_xaxes)
 
-        _arg_yaxes=dict(tickangle=45, ticksuffix="  ")
+        _arg_yaxes = dict(tickangle=45, ticksuffix="  ")
         if title_x_axis is not None:
-            _arg_yaxes={**_arg_yaxes, "title": title_y_axis}
+            _arg_yaxes = {**_arg_yaxes, "title": title_y_axis}
         fig.update_yaxes(**_arg_yaxes)
         fig.update_yaxes(tickangle=-45, ticksuffix="  ")
         fig.update_layout(
@@ -195,6 +198,7 @@ def show_graph_with_labels(
 
     return graph
 
+
 class GraphFromAdjacencyMatrix:
     """
     Usage:
@@ -219,15 +223,13 @@ class GraphFromAdjacencyMatrix:
         func_edge_coloring: Optional[Callable[[float], str]] = lambda val: "red"
         if val <= 0
         else "green",
-        func_edge_weight: Optional[Callable[[float], float]] = lambda val: abs(
-            val * 2
-        ),
+        func_edge_weight: Optional[Callable[[float], float]] = lambda val: abs(val * 2),
         func_edge_label: Optional[
             Callable[[float], Union[str, int]]
         ] = lambda val: np.round(val, 2),
         adjust_node_size_from_centrality: Optional[bool] = True,
         centrality: Optional[str] = "eigenvector",
-        optimal_distance_nodes: Optional[float] = None
+        optimal_distance_nodes: Optional[float] = None,
     ) -> None:
         self.adjacency_matrix = adjacency_matrix
         self.centrality = centrality
@@ -348,18 +350,18 @@ class GraphFromAdjacencyMatrix:
         node_text = []
 
         node_adjacencies = []
-        _label_names=nx.get_node_attributes(self.nx_graph, "label")
+        _label_names = nx.get_node_attributes(self.nx_graph, "label")
         for adjacencies in self.nx_graph.adjacency():
             node_adjacencies.append(len(adjacencies[1]))
             _node_text = f"Node Name: {_label_names[adjacencies[0]]}<br>"
             _node_text += f"# of connections: {len(adjacencies[1])}<br>"
             node_text.append(_node_text)
 
-        node_text=[
+        node_text = [
             _node_text + f"Centrality: {centrality:.2f}"
-            for centrality,_node_text in zip(nx.get_node_attributes(
-                self.nx_graph, "centrality"
-            ).values(),node_text)
+            for centrality, _node_text in zip(
+                nx.get_node_attributes(self.nx_graph, "centrality").values(), node_text
+            )
         ]
 
         node_trace.marker.color = list(
@@ -380,11 +382,11 @@ class GraphFromAdjacencyMatrix:
         edge_x = []
         edge_y = []
         edge_text = []
-        edge_color= []
-        edge_weight =[]
-        middle_node_x=[]
-        middle_node_y=[]
-        middle_node_text=[]
+        edge_color = []
+        edge_weight = []
+        middle_node_x = []
+        middle_node_y = []
+        middle_node_text = []
         for edge in self.nx_graph.edges():
             _x0, _y0 = self.nx_graph.nodes[edge[0]]["pos"]
             _x1, _y1 = self.nx_graph.nodes[edge[1]]["pos"]
@@ -394,42 +396,41 @@ class GraphFromAdjacencyMatrix:
             edge_text.append(
                 f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}'
             )
-            middle_node_x.append((_x0+_x1)/2)
-            middle_node_y.append((_y0+_y1)/2)
-            middle_node_text.append(f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}')
-            edge_color.append(
-                nx.get_edge_attributes(self.nx_graph,"color")[edge]
+            middle_node_x.append((_x0 + _x1) / 2)
+            middle_node_y.append((_y0 + _y1) / 2)
+            middle_node_text.append(
+                f'Correlation Coefficient: {nx.get_edge_attributes(self.nx_graph,"label")[edge]}'
             )
-            edge_weight.append(
-                nx.get_edge_attributes(self.nx_graph,"weight")[edge]
-            )
+            edge_color.append(nx.get_edge_attributes(self.nx_graph, "color")[edge])
+            edge_weight.append(nx.get_edge_attributes(self.nx_graph, "weight")[edge])
 
         middle_node_trace = go.Scatter(
             x=middle_node_x,
             y=middle_node_y,
             text=middle_node_text,
-            mode='markers',
-            hoverinfo='text',
-            marker=go.Marker(
-                opacity=0
-            )
-        )
-            
-        edge_traces = [go.Scatter(
-            x=_x,
-            y=_y,
-            line=dict(width=_weight, color=_color),
+            mode="markers",
             hoverinfo="text",
-            mode="lines",
-        ) for _x,_y,_color,_weight in zip(edge_x,edge_y,edge_color,edge_weight)]
+            marker=go.Marker(opacity=0),
+        )
 
-        for _edge_trace,_text in zip(edge_traces,edge_text):
-            _edge_trace.text=_text
+        edge_traces = [
+            go.Scatter(
+                x=_x,
+                y=_y,
+                line=dict(width=_weight, color=_color),
+                hoverinfo="text",
+                mode="lines",
+            )
+            for _x, _y, _color, _weight in zip(edge_x, edge_y, edge_color, edge_weight)
+        ]
+
+        for _edge_trace, _text in zip(edge_traces, edge_text):
+            _edge_trace.text = _text
         # edge_trace.marker.size = list(nx.get_edge_attributes(self.nx_graph,"weight").values())
 
-        return {"edges":edge_traces, "middle_nodes":middle_node_trace}
+        return {"edges": edge_traces, "middle_nodes": middle_node_trace}
 
-    def plot_plotly(self,plot_title:Optional[str]="") -> None:
+    def plot_plotly(self, plot_title: Optional[str] = "") -> None:
         """Plot by plotly"""
         fig = go.Figure(
             layout=go.Layout(
