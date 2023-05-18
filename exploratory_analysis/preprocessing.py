@@ -171,11 +171,12 @@ def create_time_cols(
     """
 
     if to_create == "all":
-        to_create = ["day_name", "month", "year", "week", "hour", "day", "month_year"]
+        to_create = ["date","day_name", "month", "year", "week", "hour", "day", "month_year"]
     if new_col_names is None:
         new_col_names = to_create
     for method_extract, new_col_name in zip(to_create, new_col_names):
         df[new_col_name] = {
+            "date": df[time_col].dt.date,
             "day_name": df[time_col].dt.day_name(),
             "month": df[time_col].dt.month,
             "year": df[time_col].dt.year,
