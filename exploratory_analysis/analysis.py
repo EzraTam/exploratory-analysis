@@ -440,7 +440,7 @@ class GraphFromAdjacencyMatrix:
         
         fig.add_trace(self._create_plotly_nodes())
 
-        fig.show()
+        fig.show(config={'modeBarButtonsToRemove': ['select', 'lasso']})
 
 
 class CorrelationFeatures:
