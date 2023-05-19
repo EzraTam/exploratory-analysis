@@ -251,7 +251,7 @@ class GraphFromAdjacencyMatrix:
                 *_edge,
                 color=func_edge_coloring(_val_adjacency),
                 weight=func_edge_weight(_val_adjacency),
-                label=f"Nodes: {node_labels[_edge[0]]} and {node_labels[_edge[1]]} <br>Correlation Coefficient: {_val_adjacency}",
+                label=f"Correlation between: {node_labels[_edge[0]]} and {node_labels[_edge[1]]}<br>Correlation Coefficient: {_val_adjacency}",
             )
 
         # Add node label
@@ -408,7 +408,7 @@ class GraphFromAdjacencyMatrix:
 
         return {"edges": edge_traces, "middle_nodes": middle_node_traces}
 
-    def plot_plotly(self, plot_title: Optional[str] = "") -> None:
+    def plot_plotly(self, plot_title: Optional[str] = "", plot_description:Optional[str]="") -> None:
         """Plot by plotly"""
         fig = go.Figure(
             layout=go.Layout(
@@ -419,7 +419,7 @@ class GraphFromAdjacencyMatrix:
                 margin=dict(b=20, l=5, r=5, t=40),
                 annotations=[
                     dict(
-                        text="Hier kann ein Text stehen",
+                        text=plot_description,
                         showarrow=False,
                         xref="paper",
                         yref="paper",
