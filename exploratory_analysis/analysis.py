@@ -410,7 +410,7 @@ class GraphFromAdjacencyMatrix:
             text=middle_node_text,
             mode="markers",
             hoverinfo="text",
-            marker=go.Marker(opacity=0),
+            marker=go.scatter.Marker(opacity=0),
         )
 
         edge_traces = [
