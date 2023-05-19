@@ -251,7 +251,9 @@ class GraphFromAdjacencyMatrix:
                 *_edge,
                 color=func_edge_coloring(_val_adjacency),
                 weight=func_edge_weight(_val_adjacency),
-                label=f"Correlation between: {node_labels[_edge[0]]} and {node_labels[_edge[1]]}<br>Correlation Coefficient: {_val_adjacency}",
+                label=f"Correlation between: "\
+                    f"{node_labels[_edge[0]]} and {node_labels[_edge[1]]}"\
+                    f"<br>Correlation Coefficient: {_val_adjacency}",
             )
 
         # Add node label
@@ -383,32 +385,38 @@ class GraphFromAdjacencyMatrix:
             _x0, _y0 = self.nx_graph.nodes[_edge[0]]["pos"]
             _x1, _y1 = self.nx_graph.nodes[_edge[1]]["pos"]
 
-            edge_traces.append(go.Scatter(
-                x=[_x0, _x1, None],
-                y=[_y0, _y1, None],
-                line=dict(
-                    width=nx.get_edge_attributes(self.nx_graph, "weight")[_edge],
-                    color=nx.get_edge_attributes(self.nx_graph, "color")[_edge]),
-                mode="lines",
-            ))
+            edge_traces.append(
+                go.Scatter(
+                    x=[_x0, _x1, None],
+                    y=[_y0, _y1, None],
+                    line=dict(
+                        width=nx.get_edge_attributes(self.nx_graph, "weight")[_edge],
+                        color=nx.get_edge_attributes(self.nx_graph, "color")[_edge],
+                    ),
+                    mode="lines",
+                )
+            )
 
             # Label for edges
             middle_node_traces.append(
                 go.Scatter(
                     x=[(_x0 + _x1) / 2],
                     y=[(_y0 + _y1) / 2],
-                    text=nx.get_edge_attributes(self.nx_graph,"label")[_edge],
+                    text=nx.get_edge_attributes(self.nx_graph, "label")[_edge],
                     mode="markers",
                     hoverinfo="text",
                     marker=go.scatter.Marker(opacity=0),
                     hoverlabel=dict(
-                        bgcolor=nx.get_edge_attributes(self.nx_graph, "color")[_edge]),
+                        bgcolor=nx.get_edge_attributes(self.nx_graph, "color")[_edge]
+                    ),
                 )
             )
 
         return {"edges": edge_traces, "middle_nodes": middle_node_traces}
 
-    def plot_plotly(self, plot_title: Optional[str] = "", plot_description:Optional[str]="") -> None:
+    def plot_plotly(
+        self, plot_title: Optional[str] = "", plot_description: Optional[str] = ""
+    ) -> None:
         """Plot by plotly"""
         fig = go.Figure(
             layout=go.Layout(
@@ -437,10 +445,10 @@ class GraphFromAdjacencyMatrix:
 
         for _node in self._create_plotly_edges()["middle_nodes"]:
             fig.add_trace(_node)
-        
+
         fig.add_trace(self._create_plotly_nodes())
 
-        fig.show(config={'modeBarButtonsToRemove': ['select', 'lasso']})
+        fig.show(config={"modeBarButtonsToRemove": ["select", "lasso"]})
 
 
 class CorrelationFeatures:
