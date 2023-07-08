@@ -346,6 +346,25 @@ class GraphFromAdjacencyMatrix:
             ),
         )
 
+        node_label = go.Scatter(
+            x=[
+                _pos[0]
+                for _pos in nx.get_node_attributes(self.nx_graph, "pos").values()
+            ],
+            y=[
+                _pos[1]
+                for _pos in nx.get_node_attributes(self.nx_graph, "pos").values()
+            ],
+            mode="text",
+            text=list(nx.get_node_attributes(self.nx_graph, "label").values()),
+            marker=go.scatter.Marker(opacity=0),
+            textposition="top center",
+            textfont={
+                "size": [8]
+                * len(list(nx.get_node_attributes(self.nx_graph, "label").values()))
+            },
+        )
+
         node_text = []
 
         node_adjacencies = []
@@ -374,7 +393,7 @@ class GraphFromAdjacencyMatrix:
         ]
         node_trace.text = node_text
 
-        return node_trace
+        return {"nodes": node_trace, "labels": node_label}
 
     def _create_plotly_edges(self) -> None:
 
@@ -446,7 +465,8 @@ class GraphFromAdjacencyMatrix:
         for _node in self._create_plotly_edges()["middle_nodes"]:
             fig.add_trace(_node)
 
-        fig.add_trace(self._create_plotly_nodes())
+        for _trace in self._create_plotly_nodes().values():
+            fig.add_trace(_trace)
 
         fig.show(config={"modeBarButtonsToRemove": ["select", "lasso"]})
 
