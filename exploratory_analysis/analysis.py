@@ -230,6 +230,7 @@ class GraphFromAdjacencyMatrix:
     ) -> None:
         self.adjacency_matrix = adjacency_matrix
         self.centrality = centrality
+
         if df_adjacency is not None:
             node_labels = {
                 list(df_adjacency.columns).index(col): col
@@ -257,9 +258,10 @@ class GraphFromAdjacencyMatrix:
                 *_edge,
                 color=func_edge_coloring(_val_adjacency),
                 weight=func_edge_weight(_val_adjacency),
-                label=f"Correlation between: "\
-                    f"{node_labels[_edge[0]]} and {node_labels[_edge[1]]}"\
-                    f"<br>Correlation Coefficient: {_val_adjacency}",
+                label=f"Correlation between: "
+                f"{node_labels[_edge[0]]} and {node_labels[_edge[1]]}"
+                f"<br>Correlation Coefficient: {_val_adjacency}",
+                ori_label=str(round(_val_adjacency, 2)),
             )
 
         # Add node label
@@ -309,7 +311,12 @@ class GraphFromAdjacencyMatrix:
             self.nx_graph,
             pos=_pos,
             labels=nx.get_node_attributes(self.nx_graph, "label"),
-            node_size=list(nx.get_node_attributes(self.nx_graph, "size").values()),
+            node_size=[
+                _centrality * 1000
+                for _centrality in nx.get_node_attributes(
+                    self.nx_graph, "centrality"
+                ).values()
+            ],
             with_labels=True,
             edge_color=list(nx.get_edge_attributes(self.nx_graph, "color").values()),
             width=list(nx.get_edge_attributes(self.nx_graph, "weight").values()),
@@ -318,7 +325,7 @@ class GraphFromAdjacencyMatrix:
         nx.draw_networkx_edge_labels(
             self.nx_graph,
             pos=_pos,
-            edge_labels=nx.get_edge_attributes(self.nx_graph, "label"),
+            edge_labels=nx.get_edge_attributes(self.nx_graph, "ori_label"),
             font_size=font_sizes["edge"],
             font_color="b",
         )
@@ -440,7 +447,9 @@ class GraphFromAdjacencyMatrix:
         return {"edges": edge_traces, "middle_nodes": middle_node_traces}
 
     def plot_plotly(
-        self, plot_title: Optional[str] = "", plot_description: Optional[str] = ""
+        self,
+        plot_title: Optional[str] = "Graph of Feature Correlations",
+        plot_description: Optional[str] = "",
     ) -> None:
         """Plot by plotly"""
         fig = go.Figure(
