@@ -230,12 +230,19 @@ class GraphFromAdjacencyMatrix:
     ) -> None:
         self.adjacency_matrix = adjacency_matrix
         self.centrality = centrality
+
         if df_adjacency is not None:
             node_labels = {
                 list(df_adjacency.columns).index(col): col
                 for col in list(df_adjacency.columns)
             }
             self.adjacency_matrix = df_adjacency.to_numpy()
+
+        if df_adjacency is None and node_labels is None:
+            node_labels = {
+                _index: f"Feature {_index}"
+                for _index in range(adjacency_matrix.shape[0])
+            }
 
         nodes = list(range(len(self.adjacency_matrix)))
         rows, cols = np.where(self.adjacency_matrix != 0)
@@ -251,9 +258,10 @@ class GraphFromAdjacencyMatrix:
                 *_edge,
                 color=func_edge_coloring(_val_adjacency),
                 weight=func_edge_weight(_val_adjacency),
-                label=f"Correlation between: "\
-                    f"{node_labels[_edge[0]]} and {node_labels[_edge[1]]}"\
-                    f"<br>Correlation Coefficient: {_val_adjacency}",
+                label=f"Correlation between: "
+                f"{node_labels[_edge[0]]} and {node_labels[_edge[1]]}"
+                f"<br>Correlation Coefficient: {_val_adjacency}",
+                ori_label=str(round(_val_adjacency, 2)),
             )
 
         # Add node label
@@ -303,7 +311,12 @@ class GraphFromAdjacencyMatrix:
             self.nx_graph,
             pos=_pos,
             labels=nx.get_node_attributes(self.nx_graph, "label"),
-            node_size=list(nx.get_node_attributes(self.nx_graph, "size").values()),
+            node_size=[
+                _centrality * 1000
+                for _centrality in nx.get_node_attributes(
+                    self.nx_graph, "centrality"
+                ).values()
+            ],
             with_labels=True,
             edge_color=list(nx.get_edge_attributes(self.nx_graph, "color").values()),
             width=list(nx.get_edge_attributes(self.nx_graph, "weight").values()),
@@ -312,7 +325,7 @@ class GraphFromAdjacencyMatrix:
         nx.draw_networkx_edge_labels(
             self.nx_graph,
             pos=_pos,
-            edge_labels=nx.get_edge_attributes(self.nx_graph, "label"),
+            edge_labels=nx.get_edge_attributes(self.nx_graph, "ori_label"),
             font_size=font_sizes["edge"],
             font_color="b",
         )
@@ -346,6 +359,25 @@ class GraphFromAdjacencyMatrix:
             ),
         )
 
+        node_label = go.Scatter(
+            x=[
+                _pos[0]
+                for _pos in nx.get_node_attributes(self.nx_graph, "pos").values()
+            ],
+            y=[
+                _pos[1]
+                for _pos in nx.get_node_attributes(self.nx_graph, "pos").values()
+            ],
+            mode="text",
+            text=list(nx.get_node_attributes(self.nx_graph, "label").values()),
+            marker=go.scatter.Marker(opacity=0),
+            textposition="top center",
+            textfont={
+                "size": [8]
+                * len(list(nx.get_node_attributes(self.nx_graph, "label").values()))
+            },
+        )
+
         node_text = []
 
         node_adjacencies = []
@@ -374,7 +406,7 @@ class GraphFromAdjacencyMatrix:
         ]
         node_trace.text = node_text
 
-        return node_trace
+        return {"nodes": node_trace, "labels": node_label}
 
     def _create_plotly_edges(self) -> None:
 
@@ -415,7 +447,9 @@ class GraphFromAdjacencyMatrix:
         return {"edges": edge_traces, "middle_nodes": middle_node_traces}
 
     def plot_plotly(
-        self, plot_title: Optional[str] = "", plot_description: Optional[str] = ""
+        self,
+        plot_title: Optional[str] = "Graph of Feature Correlations",
+        plot_description: Optional[str] = "",
     ) -> None:
         """Plot by plotly"""
         fig = go.Figure(
@@ -446,7 +480,8 @@ class GraphFromAdjacencyMatrix:
         for _node in self._create_plotly_edges()["middle_nodes"]:
             fig.add_trace(_node)
 
-        fig.add_trace(self._create_plotly_nodes())
+        for _trace in self._create_plotly_nodes().values():
+            fig.add_trace(_trace)
 
         fig.show(config={"modeBarButtonsToRemove": ["select", "lasso"]})
 
