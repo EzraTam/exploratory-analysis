@@ -237,6 +237,12 @@ class GraphFromAdjacencyMatrix:
             }
             self.adjacency_matrix = df_adjacency.to_numpy()
 
+        if df_adjacency is None and node_labels is None:
+            node_labels = {
+                _index: f"Feature {_index}"
+                for _index in range(adjacency_matrix.shape[0])
+            }
+
         nodes = list(range(len(self.adjacency_matrix)))
         rows, cols = np.where(self.adjacency_matrix != 0)
         edges = zip(rows.tolist(), cols.tolist())
