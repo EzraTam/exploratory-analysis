@@ -26,6 +26,7 @@ statsmodels = "^0.13.5"
 mlxtend = "^0.22.0"
 nbconvert = "^7.3.1"
 bokeh = "^3.1.1"
+stats = "^0.1.2a0"
 
 
 [tool.poetry.group.dev.dependencies]
