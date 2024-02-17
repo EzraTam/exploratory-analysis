@@ -2,7 +2,7 @@
 """
 
 from collections import Counter
-from itertools import chain
+from itertools import chain, product
 from typing import Any, List, Tuple, Optional, Union, Dict, Iterable
 from matplotlib.axes import Axes
 import matplotlib.patheffects as path_effects
@@ -232,15 +232,31 @@ def add_median_labels(ax: Axes, fmt=".1f"):
             ]
         )
 
+def fill_df_full_cat(df:pd.DataFrame,cats:Dict[str,List[Union[str,int,float]]])->pd.DataFrame:
+    """Function for completing a dataframe by full categories and set values equal
+    to zero if no value exist.
+
+    Args:
+        df (pd.DataFrame): DF to complete
+        cats (Dict[str,List[Union[str,int,float]]]): Categories to complete
+            form --> category_key: full list of categories
+    Returns:
+        pd.DataFrame: _description_
+    """
+    _df_fill=pd.DataFrame(list(product(*cats.values())),columns=cats.keys())
+    return df.merge(_df_fill,on=list(cats.keys()),how="right").fillna(0)
 
 def plot_box_count(
     df_to_visualize: pd.DataFrame,
     x_category: str,
     y_quantity: str,
     legend_category: str,
-    stat_xlabel: Optional[str] = None,
+    xlabel: Optional[str] = None,
     stat_ylabel: Optional[str] = None,
     sup_title: Optional[str] = None,
+    legend_title: Optional[str] = None,
+    x_category_full: Optional[List[Union[str,int,float]]] = None,
+    legend_category_full: Optional[List[Union[str,int,float]]] = None,
 ):
     """Function to plot the boxplot of data and the corresponding count
 
@@ -249,11 +265,13 @@ def plot_box_count(
         x_category (str): Category of the boxes on the x-axis
         y_quantity (str): Quantity to be analyzed - specify the y-axis of the data
         legend_category (str): Category for the legend a.k.a hue
-        stat_xlabel (Optional[str], optional): Label of the x-axis. Defaults to None.
+        xlabel (Optional[str], optional): Label of the x-axis. Defaults to None.
         stat_ylabel (Optional[str], optional): Label of the y-axis. Defaults to None.
         sup_title (Optional[str], optional): Title of the plot. Defaults to None.
+        legend_title (Optional[str], optional): Title of the legend. Defaults to None.
+        x_category_full (Optional[List[Union[str,int,float]]], optional): Full list of category realizations of the x-axis. Defaults to None.
+        legend_category_full (Optional[List[Union[str,int,float]]], optional): Full list of category realizations of the legend. Defaults to None.
     """
-
     # Create subaxes
     fig, axs = plt.subplots(
         nrows=2, gridspec_kw={"height_ratios": [3, 0.5]}, figsize=(30, 15)
@@ -273,24 +291,6 @@ def plot_box_count(
         },
     }
 
-    box_plot = sns.boxplot(
-        data=df_to_visualize,
-        x=x_category,
-        y=y_quantity,
-        hue=legend_category,
-        showfliers=False,
-        **mean,
-        ax=axs[0],
-    )
-
-    add_median_labels(box_plot)
-
-    if stat_xlabel is not None:
-        box_plot.set_xlabel(stat_xlabel)
-
-    if stat_ylabel is not None:
-        box_plot.set_ylabel(stat_ylabel)
-
     df_count = (
         df_to_visualize.groupby([legend_category, x_category], as_index=False)[
             y_quantity
@@ -298,6 +298,44 @@ def plot_box_count(
         .count()
         .rename(columns={y_quantity: "Number Data"})
     )
+
+    if x_category_full is None:
+        x_category_full=list(df_count[x_category].unique())
+        x_category_full.sort()
+    if legend_category_full is None:
+        legend_category_full=list(df_count[legend_category].unique())
+        legend_category_full.sort()
+    if legend_title is None:
+        legend_title=str(legend_category)
+
+    _cats={
+        x_category:x_category_full,
+        legend_category:legend_category_full,
+    }
+
+    df_count = fill_df_full_cat(df_count,_cats)
+
+    box_plot = sns.boxplot(
+        data=df_to_visualize.rename(columns={legend_category:legend_title}),
+        x=x_category,
+        y=y_quantity,
+        hue=legend_title,
+        order=x_category_full,
+        hue_order=legend_category_full,
+        legend="full",
+        showfliers=False,
+        **mean,
+        ax=axs[0],
+    )
+
+    add_median_labels(box_plot)
+
+    if xlabel is not None:
+        box_plot.set_xlabel(xlabel)
+
+    if stat_ylabel is not None:
+        box_plot.set_ylabel(stat_ylabel)
+
     count_plot = sns.barplot(
         data=df_count, x=x_category, y="Number Data", hue=legend_category, ax=axs[1]
     )
@@ -307,6 +345,7 @@ def plot_box_count(
         count_plot.bar_label(
             i,
         )
+    count_plot.set_xlabel(xlabel)
 
     # Delete legend - Need a more elegant solution, e.g. create legend for both plots
     count_plot.get_legend().remove()
