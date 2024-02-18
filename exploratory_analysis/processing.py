@@ -327,7 +327,7 @@ def create_matrix_cats(
     cat_cols: List[str],
     val_col: str,
     agg_method: str,
-    index_ordering: Optional[List[Union[str,int,float]]]=None,
+    index_ordering: Optional[List[Union[str, int, float]]] = None,
 ) -> List[Tuple[Union[int, str], pd.DataFrame]]:
     """Function for creating matrix with values equal to aggregation
     over some categories
@@ -350,12 +350,12 @@ def create_matrix_cats(
         df.groupby([plot_cat_col, *cat_cols], as_index=False)[val_col], agg_method
     )()
 
-    _cats={
+    _cats = {
         plot_cat_col: list(_df_aggregated[plot_cat_col].unique()),
-        **{_col: list(_df_aggregated[_col].unique()) for _col in cat_cols}
+        **{_col: list(_df_aggregated[_col].unique()) for _col in cat_cols},
     }
 
-    _df_aggregated = fill_df_full_cat(_df_aggregated,_cats)
+    _df_aggregated = fill_df_full_cat(_df_aggregated, _cats)
 
     # Query
     _df_results = map(

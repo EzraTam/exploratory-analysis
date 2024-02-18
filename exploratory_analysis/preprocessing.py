@@ -93,7 +93,9 @@ def year_month_day_col(dataframe: pd.DataFrame, col: str) -> pd.DataFrame:
 
 
 def one_hot_encode(
-    df_input: pd.DataFrame, li_one_hot: Union[List[str],Tuple[str,str]], drop: Optional[bool] = True
+    df_input: pd.DataFrame,
+    li_one_hot: Union[List[str], Tuple[str, str]],
+    drop: Optional[bool] = True,
 ) -> Dict[str, Union[pd.DataFrame, Dict[str, List[str]]]]:
     """Drop and one hot encode columns of a dataframe
     Args:
@@ -111,14 +113,16 @@ def one_hot_encode(
     df_result = df_input
     dummies_dict = {}
     for _feat in li_one_hot:
-        if isinstance(_feat,str):
+        if isinstance(_feat, str):
             _col_nm = _feat
             _prefix = _feat
-            _prefix_sp="_"
-        elif isinstance(_feat,Tuple):
+            _prefix_sp = "_"
+        elif isinstance(_feat, Tuple):
             _col_nm, _prefix = _feat
-            _prefix_sp=""
-        dummies_df = pd.get_dummies(df_result[_col_nm], prefix=_prefix,prefix_sep=_prefix_sp)
+            _prefix_sp = ""
+        dummies_df = pd.get_dummies(
+            df_result[_col_nm], prefix=_prefix, prefix_sep=_prefix_sp
+        )
         dummies_dict[_col_nm] = list(dummies_df.columns)
         df_result = df_result.join(dummies_df)
         if drop:
@@ -171,7 +175,16 @@ def create_time_cols(
     """
 
     if to_create == "all":
-        to_create = ["date","day_name", "month", "year", "week", "hour", "day", "month_year"]
+        to_create = [
+            "date",
+            "day_name",
+            "month",
+            "year",
+            "week",
+            "hour",
+            "day",
+            "month_year",
+        ]
     if new_col_names is None:
         new_col_names = to_create
     for method_extract, new_col_name in zip(to_create, new_col_names):

@@ -233,6 +233,7 @@ def add_median_labels(ax: Axes, fmt=".1f"):
             ]
         )
 
+
 def plot_box_count(
     df_to_visualize: pd.DataFrame,
     x_category: str,
@@ -242,8 +243,8 @@ def plot_box_count(
     stat_ylabel: Optional[str] = None,
     sup_title: Optional[str] = None,
     legend_title: Optional[str] = None,
-    x_category_full: Optional[List[Union[str,int,float]]] = None,
-    legend_category_full: Optional[List[Union[str,int,float]]] = None,
+    x_category_full: Optional[List[Union[str, int, float]]] = None,
+    legend_category_full: Optional[List[Union[str, int, float]]] = None,
 ):
     """Function to plot the boxplot of data and the corresponding count
 
@@ -287,23 +288,23 @@ def plot_box_count(
     )
 
     if x_category_full is None:
-        x_category_full=list(df_count[x_category].unique())
+        x_category_full = list(df_count[x_category].unique())
         x_category_full.sort()
     if legend_category_full is None:
-        legend_category_full=list(df_count[legend_category].unique())
+        legend_category_full = list(df_count[legend_category].unique())
         legend_category_full.sort()
     if legend_title is None:
-        legend_title=str(legend_category)
+        legend_title = str(legend_category)
 
-    _cats={
-        x_category:x_category_full,
-        legend_category:legend_category_full,
+    _cats = {
+        x_category: x_category_full,
+        legend_category: legend_category_full,
     }
 
-    df_count = fill_df_full_cat(df_count,_cats)
+    df_count = fill_df_full_cat(df_count, _cats)
 
     box_plot = sns.boxplot(
-        data=df_to_visualize.rename(columns={legend_category:legend_title}),
+        data=df_to_visualize.rename(columns={legend_category: legend_title}),
         x=x_category,
         y=y_quantity,
         hue=legend_title,
@@ -341,7 +342,10 @@ def plot_box_count(
 
 
 def plot_heat_map_from_matrices(
-    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]], plot_title: str, xlabel: Optional[str]=None, ylabel: Optional[str]=None
+    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]],
+    plot_title: str,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
 ) -> None:
     """Given matrices, plot multiple heat maps
 
