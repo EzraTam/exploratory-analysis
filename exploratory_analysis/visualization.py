@@ -2,7 +2,7 @@
 """
 
 from collections import Counter
-from itertools import chain, product
+from itertools import chain
 from typing import Any, List, Tuple, Optional, Union, Dict, Iterable
 from matplotlib.axes import Axes
 import matplotlib.patheffects as path_effects
@@ -17,6 +17,7 @@ import seaborn as sns
 import plotly.graph_objects as go
 
 from exploratory_analysis import basic_functions as bf
+from exploratory_analysis.utils import fill_df_full_cat
 
 
 def boxplot_list(
@@ -231,20 +232,6 @@ def add_median_labels(ax: Axes, fmt=".1f"):
                 path_effects.Normal(),
             ]
         )
-
-def fill_df_full_cat(df:pd.DataFrame,cats:Dict[str,List[Union[str,int,float]]])->pd.DataFrame:
-    """Function for completing a dataframe by full categories and set values equal
-    to zero if no value exist.
-
-    Args:
-        df (pd.DataFrame): DF to complete
-        cats (Dict[str,List[Union[str,int,float]]]): Categories to complete
-            form --> category_key: full list of categories
-    Returns:
-        pd.DataFrame: _description_
-    """
-    _df_fill=pd.DataFrame(list(product(*cats.values())),columns=cats.keys())
-    return df.merge(_df_fill,on=list(cats.keys()),how="right").fillna(0)
 
 def plot_box_count(
     df_to_visualize: pd.DataFrame,
