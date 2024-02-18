@@ -341,7 +341,7 @@ def plot_box_count(
 
 
 def plot_heat_map_from_matrices(
-    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]], plot_title: str
+    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]], plot_title: str, xlabel: Optional[str]=None, ylabel: Optional[str]=None
 ) -> None:
     """Given matrices, plot multiple heat maps
 
@@ -372,6 +372,10 @@ def plot_heat_map_from_matrices(
     for idx, (_cat_matrix, _df_matrix) in enumerate(dfs_matrix):
         sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
         axs[idx].set_title(_cat_matrix, **font_config)
+        if xlabel is not None:
+            axs[idx].set_xlabel(xlabel)
+        if ylabel is not None:
+            axs[idx].set_ylabel(ylabel)
 
     fig.subplots_adjust(hspace=0.5)
 
