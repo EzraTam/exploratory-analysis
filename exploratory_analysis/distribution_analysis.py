@@ -1,15 +1,14 @@
 """Module for exploring the distribution
 of data
 """
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from sklearn.neighbors import KernelDensity
-from sklearn.model_selection import GridSearchCV
-from scipy.signal import argrelextrema
-
 import plotly.express as px
+from scipy.signal import argrelextrema
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KernelDensity
 
 
 def find_local_kde_extrema(

@@ -1,4 +1,5 @@
-from typing import Iterable, Union, Optional, Tuple, Dict, Any
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
+
 import networkx as nx
 
 NodeType = Union[int,str]

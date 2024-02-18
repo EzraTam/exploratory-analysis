@@ -1,9 +1,10 @@
 """ Module for executing basic analysis of a DF
 """
 
-from typing import List, Union, Dict
-from types import MethodType
 from functools import reduce
+from types import MethodType
+from typing import Dict, List, Union
+
 import pandas as pd
 
 

@@ -4,12 +4,14 @@ Functionalities:
     * Show statistics by grouping
 """
 
-from typing import List, Dict, Union, Optional, Tuple
 from functools import reduce
+from typing import Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
+
+from exploratory_analysis.basic_functions import adjust_display_names, to_int
 from exploratory_analysis.preprocessing import pad_complete_cat_value
-from exploratory_analysis.basic_functions import to_int, adjust_display_names
 from exploratory_analysis.utils import fill_df_full_cat
 
 

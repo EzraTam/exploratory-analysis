@@ -1,9 +1,11 @@
 """Preprocessing Module
 """
 
-from typing import List, Dict, Union, Optional, Tuple
 from itertools import product
+from typing import Dict, List, Optional, Tuple, Union
+
 import pandas as pd
+
 import exploratory_analysis.basic_functions as bf
 
 

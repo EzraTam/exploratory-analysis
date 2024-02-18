@@ -3,7 +3,8 @@ Importing module
 """
 
 import pathlib
-from typing import Dict, Union, Optional, List
+from typing import Dict, List, Optional, Union
+
 import pandas as pd
 
 

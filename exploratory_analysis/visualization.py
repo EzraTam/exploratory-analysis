@@ -3,18 +3,17 @@
 
 from collections import Counter
 from itertools import chain
-from typing import Any, List, Tuple, Optional, Union, Dict, Iterable
-from matplotlib.axes import Axes
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
+import matplotlib.cm as cmx
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
-import matplotlib.cm as cmx
-from matplotlib import colors
-from matplotlib.colors import LinearSegmentedColormap
-
 import pandas as pd
-import seaborn as sns
-
 import plotly.graph_objects as go
+import seaborn as sns
+from matplotlib import colors
+from matplotlib.axes import Axes
+from matplotlib.colors import LinearSegmentedColormap
 
 from exploratory_analysis import basic_functions as bf
 from exploratory_analysis.utils import fill_df_full_cat

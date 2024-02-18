@@ -1,7 +1,8 @@
 """Module for Utils"""
 
-from typing import Dict, List, Union
 from itertools import product
+from typing import Dict, List, Union
+
 import pandas as pd
 
 
