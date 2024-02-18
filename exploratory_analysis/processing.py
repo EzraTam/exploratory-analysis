@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from exploratory_analysis.preprocessing import pad_complete_cat_value
 from exploratory_analysis.basic_functions import to_int, adjust_display_names
+from exploratory_analysis.utils import fill_df_full_cat
 
 
 def group_and_fill(
@@ -326,6 +327,7 @@ def create_matrix_cats(
     cat_cols: List[str],
     val_col: str,
     agg_method: str,
+    index_ordering: Optional[List[Union[str,int,float]]]=None,
 ) -> List[Tuple[Union[int, str], pd.DataFrame]]:
     """Function for creating matrix with values equal to aggregation
     over some categories
@@ -348,6 +350,13 @@ def create_matrix_cats(
         df.groupby([plot_cat_col, *cat_cols], as_index=False)[val_col], agg_method
     )()
 
+    _cats={
+        plot_cat_col: list(_df_aggregated[plot_cat_col].unique()),
+        **{_col: list(_df_aggregated[_col].unique()) for _col in cat_cols}
+    }
+
+    _df_aggregated = fill_df_full_cat(_df_aggregated,_cats)
+
     # Query
     _df_results = map(
         lambda cat: _df_aggregated.query(f"{plot_cat_col} == '{cat}'").drop(
@@ -361,5 +370,11 @@ def create_matrix_cats(
         lambda _df: _df.pivot(index=cat_cols[0], columns=cat_cols[1], values=val_col),
         _df_results,
     )
+
+    if index_ordering is not None:
+        _df_results = map(
+            lambda _df: _df.reindex(index_ordering),
+            _df_results,
+        )
 
     return list(zip(_plot_cats, _df_results))
