@@ -373,7 +373,7 @@ def plot_heat_map_from_matrices(
         sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
         axs[idx].set_title(_cat_matrix, **font_config)
 
-    fig.subplots_adjust(wspace=0.01)
+    fig.subplots_adjust(hspace=0.5)
 
     plt.show()
 
