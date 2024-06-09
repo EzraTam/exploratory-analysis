@@ -244,6 +244,7 @@ def plot_box_count(
     legend_title: Optional[str] = None,
     x_category_full: Optional[List[Union[str, int, float]]] = None,
     legend_category_full: Optional[List[Union[str, int, float]]] = None,
+    figsize=(30, 15)
 ):
     """Function to plot the boxplot of data and the corresponding count
 
@@ -261,7 +262,7 @@ def plot_box_count(
     """
     # Create subaxes
     fig, axs = plt.subplots(
-        nrows=2, gridspec_kw={"height_ratios": [3, 0.5]}, figsize=(30, 15)
+        nrows=2, gridspec_kw={"height_ratios": [3, 0.5]}, figsize=figsize
     )
 
     if sup_title:
@@ -337,7 +338,7 @@ def plot_box_count(
     # Delete legend - Need a more elegant solution, e.g. create legend for both plots
     count_plot.get_legend().remove()
 
-    plt.show()
+    return axs
 
 
 def plot_heat_map_from_matrices(
@@ -345,6 +346,10 @@ def plot_heat_map_from_matrices(
     plot_title: str,
     xlabel: Optional[str] = None,
     ylabel: Optional[str] = None,
+    vmin: Optional[float] = 0,
+    vmax: Optional[float] = 4,
+    figsize: Optional[Tuple[int]] = (30,15),
+    prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"]
 ) -> None:
     """Given matrices, plot multiple heat maps
 
@@ -355,18 +360,18 @@ def plot_heat_map_from_matrices(
 
     # Has to be adjustable later
     cmap = LinearSegmentedColormap.from_list(
-        "rg", ["r", "y", "g", "g", "g", "g"], N=256
+        "rg", prop_color, N=256
     )
 
-    fig, axs = plt.subplots(nrows=len(dfs_matrix), figsize=(30, 15), sharex="row")
+    fig, axs = plt.subplots(nrows=len(dfs_matrix), figsize=figsize, sharex="row")
     fig.suptitle(plot_title, fontsize=25)
 
     config_heatmap = {
         "cmap": cmap,
         "annot": True,
         "linewidth": 0.5,
-        "vmin": 0,
-        "vmax": 4,
+        "vmin": vmin,
+        "vmax": vmax,
         "square": True,
         "fmt": ".2f",
     }
