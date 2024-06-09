@@ -330,6 +330,7 @@ def create_matrix_cats(
     val_col: str,
     agg_method: str,
     index_ordering: Optional[List[Union[str, int, float]]] = None,
+    col_ordering: Optional[List[Union[str, int, float]]] = None,
 ) -> List[Tuple[Union[int, str], pd.DataFrame]]:
     """Function for creating matrix with values equal to aggregation
     over some categories
@@ -378,5 +379,8 @@ def create_matrix_cats(
             lambda _df: _df.reindex(index_ordering),
             _df_results,
         )
+
+    if col_ordering is not None:
+        _df_results = map(lambda _df: _df[col_ordering],_df_results)
 
     return list(zip(_plot_cats, _df_results))
