@@ -1,7 +1,8 @@
 """
 Module for time series analysis
 """
-from typing import Optional, List, Union, Dict
+from typing import Dict, List, Optional, Union
+
 import pandas as pd
 import plotly.express as px
 from plotly.graph_objects import Figure

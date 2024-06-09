@@ -2,7 +2,8 @@
 """
 
 from collections import defaultdict
-from typing import Any, List, Dict, Tuple, Union, Callable
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import networkx as nx
 import plotly.graph_objects as go
 

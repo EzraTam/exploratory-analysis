@@ -2,20 +2,18 @@
 of a DF
 """
 from __future__ import annotations
-from typing import Dict, List, Optional, Callable, Union, Tuple
+
 from itertools import product
-import numpy as np
-import seaborn as sns
-import pandas as pd
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import matplotlib.pyplot as plt
 import networkx as nx
-
-
+import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import f_classif
+import seaborn as sns
+from sklearn.feature_selection import SelectKBest, f_classif
 
 from exploratory_analysis.preprocessing import one_hot_encode
 

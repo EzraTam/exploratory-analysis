@@ -1,4 +1,5 @@
 from typing import List
+
 import pandas as pd
 from scipy import stats
 
@@ -68,12 +69,12 @@ def test_equal_distributions(data: List[pd.Series]) -> None:
         else "the observations have not the same distribution"
     )
     _text_util(
-            test_display_nm=_test_display_nm,
-            result_comp=_result_comp,
-            implication_1=_implication_1,
-            implication_2=_implication_2,
-            p_value=_test.pvalue,
-        )
+        test_display_nm=_test_display_nm,
+        result_comp=_result_comp,
+        implication_1=_implication_1,
+        implication_2=_implication_2,
+        p_value=_test.pvalue,
+    )
 
 
 def test_equal_variances(data: List[pd.Series]) -> None:
@@ -87,9 +88,9 @@ def test_equal_variances(data: List[pd.Series]) -> None:
         else "the observations have not the same variances"
     )
     _text_util(
-            test_display_nm=_test_display_nm,
-            result_comp=_result_comp,
-            implication_1=_implication_1,
-            implication_2=_implication_2,
-            p_value=_test.pvalue,
-        )
+        test_display_nm=_test_display_nm,
+        result_comp=_result_comp,
+        implication_1=_implication_1,
+        implication_2=_implication_2,
+        p_value=_test.pvalue,
+    )

@@ -1,8 +1,9 @@
 """Module for basic functions
 """
 from collections import defaultdict
-from typing import Union, List, Optional, Any, Tuple, Dict
 from re import sub
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import pandas as pd
 
 

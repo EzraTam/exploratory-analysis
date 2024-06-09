@@ -3,20 +3,20 @@
 
 from collections import Counter
 from itertools import chain
-from typing import Any, List, Tuple, Optional, Union, Dict, Iterable
-from matplotlib.axes import Axes
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
+import matplotlib.cm as cmx
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
-import matplotlib.cm as cmx
+import pandas as pd
+import plotly.graph_objects as go
+import seaborn as sns
 from matplotlib import colors
+from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
 
-import pandas as pd
-import seaborn as sns
-
-import plotly.graph_objects as go
-
 from exploratory_analysis import basic_functions as bf
+from exploratory_analysis.utils import fill_df_full_cat
 
 
 def boxplot_list(
@@ -238,9 +238,13 @@ def plot_box_count(
     x_category: str,
     y_quantity: str,
     legend_category: str,
-    stat_xlabel: Optional[str] = None,
+    xlabel: Optional[str] = None,
     stat_ylabel: Optional[str] = None,
     sup_title: Optional[str] = None,
+    legend_title: Optional[str] = None,
+    x_category_full: Optional[List[Union[str, int, float]]] = None,
+    legend_category_full: Optional[List[Union[str, int, float]]] = None,
+    figsize=(30, 15)
 ):
     """Function to plot the boxplot of data and the corresponding count
 
@@ -249,14 +253,16 @@ def plot_box_count(
         x_category (str): Category of the boxes on the x-axis
         y_quantity (str): Quantity to be analyzed - specify the y-axis of the data
         legend_category (str): Category for the legend a.k.a hue
-        stat_xlabel (Optional[str], optional): Label of the x-axis. Defaults to None.
+        xlabel (Optional[str], optional): Label of the x-axis. Defaults to None.
         stat_ylabel (Optional[str], optional): Label of the y-axis. Defaults to None.
         sup_title (Optional[str], optional): Title of the plot. Defaults to None.
+        legend_title (Optional[str], optional): Title of the legend. Defaults to None.
+        x_category_full (Optional[List[Union[str,int,float]]], optional): Full list of category realizations of the x-axis. Defaults to None.
+        legend_category_full (Optional[List[Union[str,int,float]]], optional): Full list of category realizations of the legend. Defaults to None.
     """
-
     # Create subaxes
     fig, axs = plt.subplots(
-        nrows=2, gridspec_kw={"height_ratios": [3, 0.5]}, figsize=(30, 15)
+        nrows=2, gridspec_kw={"height_ratios": [3, 0.5]}, figsize=figsize
     )
 
     if sup_title:
@@ -273,24 +279,6 @@ def plot_box_count(
         },
     }
 
-    box_plot = sns.boxplot(
-        data=df_to_visualize,
-        x=x_category,
-        y=y_quantity,
-        hue=legend_category,
-        showfliers=False,
-        **mean,
-        ax=axs[0],
-    )
-
-    add_median_labels(box_plot)
-
-    if stat_xlabel is not None:
-        box_plot.set_xlabel(stat_xlabel)
-
-    if stat_ylabel is not None:
-        box_plot.set_ylabel(stat_ylabel)
-
     df_count = (
         df_to_visualize.groupby([legend_category, x_category], as_index=False)[
             y_quantity
@@ -298,6 +286,44 @@ def plot_box_count(
         .count()
         .rename(columns={y_quantity: "Number Data"})
     )
+
+    if x_category_full is None:
+        x_category_full = list(df_count[x_category].unique())
+        x_category_full.sort()
+    if legend_category_full is None:
+        legend_category_full = list(df_count[legend_category].unique())
+        legend_category_full.sort()
+    if legend_title is None:
+        legend_title = str(legend_category)
+
+    _cats = {
+        x_category: x_category_full,
+        legend_category: legend_category_full,
+    }
+
+    df_count = fill_df_full_cat(df_count, _cats)
+
+    box_plot = sns.boxplot(
+        data=df_to_visualize.rename(columns={legend_category: legend_title}),
+        x=x_category,
+        y=y_quantity,
+        hue=legend_title,
+        order=x_category_full,
+        hue_order=legend_category_full,
+        legend="full",
+        showfliers=False,
+        **mean,
+        ax=axs[0],
+    )
+
+    add_median_labels(box_plot)
+
+    if xlabel is not None:
+        box_plot.set_xlabel(xlabel)
+
+    if stat_ylabel is not None:
+        box_plot.set_ylabel(stat_ylabel)
+
     count_plot = sns.barplot(
         data=df_count, x=x_category, y="Number Data", hue=legend_category, ax=axs[1]
     )
@@ -307,15 +333,23 @@ def plot_box_count(
         count_plot.bar_label(
             i,
         )
+    count_plot.set_xlabel(xlabel)
 
     # Delete legend - Need a more elegant solution, e.g. create legend for both plots
     count_plot.get_legend().remove()
 
-    plt.show()
+    return axs
 
 
 def plot_heat_map_from_matrices(
-    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]], plot_title: str
+    dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]],
+    plot_title: str,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    vmin: Optional[float] = 0,
+    vmax: Optional[float] = 4,
+    figsize: Optional[Tuple[int]] = (30,15),
+    prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"]
 ) -> None:
     """Given matrices, plot multiple heat maps
 
@@ -326,18 +360,18 @@ def plot_heat_map_from_matrices(
 
     # Has to be adjustable later
     cmap = LinearSegmentedColormap.from_list(
-        "rg", ["r", "y", "g", "g", "g", "g"], N=256
+        "rg", prop_color, N=256
     )
 
-    fig, axs = plt.subplots(nrows=len(dfs_matrix), figsize=(30, 15), sharex="row")
+    fig, axs = plt.subplots(nrows=len(dfs_matrix), figsize=figsize, sharex="row")
     fig.suptitle(plot_title, fontsize=25)
 
     config_heatmap = {
         "cmap": cmap,
         "annot": True,
         "linewidth": 0.5,
-        "vmin": 0,
-        "vmax": 4,
+        "vmin": vmin,
+        "vmax": vmax,
         "square": True,
         "fmt": ".2f",
     }
@@ -346,8 +380,12 @@ def plot_heat_map_from_matrices(
     for idx, (_cat_matrix, _df_matrix) in enumerate(dfs_matrix):
         sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
         axs[idx].set_title(_cat_matrix, **font_config)
+        if xlabel is not None:
+            axs[idx].set_xlabel(xlabel)
+        if ylabel is not None:
+            axs[idx].set_ylabel(ylabel)
 
-    fig.subplots_adjust(wspace=0.01)
+    fig.subplots_adjust(hspace=0.5)
 
     plt.show()
 

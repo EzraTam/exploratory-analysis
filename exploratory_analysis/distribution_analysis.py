@@ -1,16 +1,14 @@
 """Module for exploring the distribution
 of data
 """
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from sklearn.neighbors import KernelDensity
-from sklearn.model_selection import GridSearchCV
-from scipy.signal import argrelextrema
-
 import plotly.express as px
-
+from scipy.signal import argrelextrema
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KernelDensity
 
 
 def find_local_kde_extrema(
@@ -19,7 +17,7 @@ def find_local_kde_extrema(
     how: Optional[str] = "maxima",
     bandwidth_kdw: Optional[float] = 0.6,
     kernel_kde: Optional[str] = "gaussian",
-    optimize_bandwidth: Optional[bool] = False
+    optimize_bandwidth: Optional[bool] = False,
 ) -> Dict[str, np.array]:
     """Function for finding local extrema in the KDE-smoothed data distribution.
 
@@ -38,20 +36,19 @@ def find_local_kde_extrema(
             "kde_values": Value of the corresponding KDE
         }
     """
-    _data_for_kde=np.array(data).reshape(-1, 1)
+    _data_for_kde = np.array(data).reshape(-1, 1)
     # Fit a kernel density estimation to the data
     if optimize_bandwidth:
-        grid = GridSearchCV(KernelDensity(kernel=kernel_kde),
-                        {'bandwidth': np.linspace(0.1, 1.0, 30)},
-                        cv=20) # 20-fold cross-validation
+        grid = GridSearchCV(
+            KernelDensity(kernel=kernel_kde),
+            {"bandwidth": np.linspace(0.1, 1.0, 30)},
+            cv=20,
+        )  # 20-fold cross-validation
         grid.fit(_data_for_kde)
-        bandwidth_kdw=grid.best_params_["bandwidth"]
+        bandwidth_kdw = grid.best_params_["bandwidth"]
         print(f"Obtained bandwidth after optimization: {bandwidth_kdw}")
 
-
-    kde = KernelDensity(kernel=kernel_kde, bandwidth=bandwidth_kdw).fit(
-        _data_for_kde
-    )
+    kde = KernelDensity(kernel=kernel_kde, bandwidth=bandwidth_kdw).fit(_data_for_kde)
 
     # Generate x values for evaluating the KDE
     x_values = np.linspace(min(data), max(data), resolution)
@@ -71,7 +68,7 @@ def plot_violin_binary(
     cats: List[str],
     prefix: Optional[str] = "",
     annot_prefix: Optional[str] = "",
-    optimize_bandwidth: Optional[bool] = False
+    optimize_bandwidth: Optional[bool] = False,
 ) -> None:
     """Violin Plot of boolean categorical variables
     Local maxima of KDE is also given
@@ -91,7 +88,9 @@ def plot_violin_binary(
         cat_col = prefix + cat
 
         _kde_extrema = find_local_kde_extrema(
-            data_frame[data_frame[cat_col] == 1][val_col], resolution=100,optimize_bandwidth=optimize_bandwidth
+            data_frame[data_frame[cat_col] == 1][val_col],
+            resolution=100,
+            optimize_bandwidth=optimize_bandwidth,
         )
 
         _df_fig = data_frame.rename(columns={cat_col: cat})
@@ -134,11 +133,10 @@ def plot_violin_with_kde(
     cats: List[str],
     prefix: Optional[str] = "",
     annot_prefix: Optional[str] = "",
-    resolution: Optional[int]=100,
-    optimize_bandwidth: Optional[bool]= False,
+    resolution: Optional[int] = 100,
+    optimize_bandwidth: Optional[bool] = False,
     bandwidth_kdw: Optional[float] = 0.6,
-    kernel_kde: Optional[str] = "gaussian"
-
+    kernel_kde: Optional[str] = "gaussian",
 ) -> None:
     """Violin Plot of boolean categorical variables
     Local maxima of KDE is also given
@@ -159,8 +157,11 @@ def plot_violin_with_kde(
         _cats = _df[cat_col].unique()
         _kde_extrema = {
             _cat: find_local_kde_extrema(
-                _df[_df[cat_col] == _cat][val_col], resolution=resolution,
-                bandwidth_kdw=bandwidth_kdw,kernel_kde=kernel_kde,optimize_bandwidth=optimize_bandwidth
+                _df[_df[cat_col] == _cat][val_col],
+                resolution=resolution,
+                bandwidth_kdw=bandwidth_kdw,
+                kernel_kde=kernel_kde,
+                optimize_bandwidth=optimize_bandwidth,
             )
             for _cat in _cats
         }
