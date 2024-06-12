@@ -376,7 +376,8 @@ def plot_heat_map_from_matrices(
         "fmt": ".2f",
     }
     font_config = {"fontweight": "bold", "fontsize": 20, "pad": 15}
-
+    if len(dfs_matrix) == 1:
+        axs = [axs]
     for idx, (_cat_matrix, _df_matrix) in enumerate(dfs_matrix):
         sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
         axs[idx].set_title(_cat_matrix, **font_config)
