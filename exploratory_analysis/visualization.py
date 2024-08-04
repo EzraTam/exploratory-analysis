@@ -353,6 +353,7 @@ def plot_heat_map_from_matrices(
     figsize: Optional[Tuple[int]] = (30,15),
     prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"],
     fmt: Optional[str] = ".2f",
+    return_axs: Optional[bool] = False
 ) -> None:
     """Given matrices, plot multiple heat maps
 
@@ -397,7 +398,10 @@ def plot_heat_map_from_matrices(
 
     fig.subplots_adjust(hspace=0.5)
 
-    plt.show()
+    if return_axs:
+        return fig, axs
+    else:
+        plt.show()
 
 
 ## Sankey Diagram
