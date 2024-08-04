@@ -347,6 +347,7 @@ def plot_heat_map_from_matrices(
     xlabel: Optional[str] = None,
     xticks_labels: Optional[List[Union[str,int]]] = None,
     ylabel: Optional[str] = None,
+    yticks_labels: Optional[List[Union[str,int]]] = None,
     vmin: Optional[float] = 0,
     vmax: Optional[float] = 4,
     figsize: Optional[Tuple[int]] = (30,15),
@@ -390,6 +391,8 @@ def plot_heat_map_from_matrices(
             axs[idx].set_ylabel(ylabel)
         if xticks_labels is not None:
             axs[idx].set_xticklabels(xticks_labels)
+        if yticks_labels is not None:
+            axs[idx].set_yticklabels(yticks_labels)
 
     fig.subplots_adjust(hspace=0.5)
 
