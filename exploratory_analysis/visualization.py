@@ -351,7 +351,8 @@ def plot_heat_map_from_matrices(
     vmin: Optional[float] = 0,
     vmax: Optional[float] = 4,
     figsize: Optional[Tuple[int]] = (30,15),
-    prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"]
+    prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"],
+    fmt: Optional[str] = ".2f",
 ) -> None:
     """Given matrices, plot multiple heat maps
 
@@ -375,7 +376,7 @@ def plot_heat_map_from_matrices(
         "vmin": vmin,
         "vmax": vmax,
         "square": True,
-        "fmt": ".2f",
+        "fmt": fmt
     }
     font_config = {"fontweight": "bold", "fontsize": 20, "pad": 15}
 
