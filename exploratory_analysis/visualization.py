@@ -345,11 +345,15 @@ def plot_heat_map_from_matrices(
     dfs_matrix: List[Tuple[Union[str, int], pd.DataFrame]],
     plot_title: str,
     xlabel: Optional[str] = None,
+    xticks_labels: Optional[List[Union[str,int]]] = None,
     ylabel: Optional[str] = None,
+    yticks_labels: Optional[List[Union[str,int]]] = None,
     vmin: Optional[float] = 0,
     vmax: Optional[float] = 4,
     figsize: Optional[Tuple[int]] = (30,15),
-    prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"]
+    prop_color: Optional[List[str]] = ["r", "r", "y", "y", "g", "g"],
+    fmt: Optional[str] = ".2f",
+    return_axs: Optional[bool] = False
 ) -> None:
     """Given matrices, plot multiple heat maps
 
@@ -373,9 +377,12 @@ def plot_heat_map_from_matrices(
         "vmin": vmin,
         "vmax": vmax,
         "square": True,
-        "fmt": ".2f",
+        "fmt": fmt
     }
     font_config = {"fontweight": "bold", "fontsize": 20, "pad": 15}
+
+    if len(dfs_matrix) == 1:
+        axs = [axs]
 
     for idx, (_cat_matrix, _df_matrix) in enumerate(dfs_matrix):
         sns.heatmap(_df_matrix, ax=axs[idx], **config_heatmap)
@@ -384,10 +391,17 @@ def plot_heat_map_from_matrices(
             axs[idx].set_xlabel(xlabel)
         if ylabel is not None:
             axs[idx].set_ylabel(ylabel)
+        if xticks_labels is not None:
+            axs[idx].set_xticklabels(xticks_labels)
+        if yticks_labels is not None:
+            axs[idx].set_yticklabels(yticks_labels)
 
     fig.subplots_adjust(hspace=0.5)
 
-    plt.show()
+    if return_axs:
+        return fig, axs
+    else:
+        plt.show()
 
 
 ## Sankey Diagram
