@@ -50,8 +50,8 @@ def plot_time_series_plotly(
     if display_name_val_cols is not None:
         df_time_series = df_time_series.rename(columns=display_name_val_cols)
 
-    plotly_line_arguments = dict(data_frame=df_time_series, x=time_col, y=val_cols)
-    # custom_data_for_hover=set(other_hovers_in_plot.keys())-set([time_col,*val_cols])
+    plotly_line_arguments = {
+        "data_frame": df_time_series, "x": time_col, "y": val_cols}
 
     if other_hovers_in_plot is not None:
         plotly_line_arguments = {
@@ -223,25 +223,25 @@ def plot_smoothed_time_series_agg(
         aggregator_smoother=aggregator_smoother
     )
 
-    _arg_plot = dict(
-        df_time_series=_df,
-        time_col=col_time,
-        val_cols=[display_nm_col_val, *display_nm_col_smoothed],
-        hover_nm_x_col=display_nm_col_time,
-        hover_nm_y_col=display_nm_col_val,
-        plot_title=plot_title,
-        xaxis_title=xaxis_title,
-        yaxis_title=yaxis_title,
-        legend_title=legend_title,
-    )
+    _arg_plot = {
+        "df_time_series": _df,
+        "time_col": col_time,
+        "val_cols": [display_nm_col_val, *display_nm_col_smoothed],
+        "hover_nm_x_col": display_nm_col_time,
+        "hover_nm_y_col": display_nm_col_val,
+        "plot_title": plot_title,
+        "xaxis_title": xaxis_title,
+        "yaxis_title": yaxis_title,
+        "legend_title": legend_title,
+    }
 
     if extract_weekday:
         _df["weekday"] = _df["date"].apply(lambda x: x.strftime("%A"))
-        _arg_plot = dict(**_arg_plot, other_hovers_in_plot={"weekday": "Day"})
+        _arg_plot = {**_arg_plot, "other_hovers_in_plot": {"weekday": "Day"}}
 
     fig = plot_time_series_plotly(**_arg_plot)
 
-    return dict(result_df=_df, plotly_figure=fig)
+    return {"result_df": _df, "plotly_figure": fig}
 
 
 def extract_cat_time_series(
@@ -290,7 +290,8 @@ def extract_cat_time_series(
 
     if smooth_length is not None:
         for _col in _df[col_cat].unique():
-            _df_cat_series[_col] = _df_cat_series[_col].ewm(span=smooth_length).mean()
+            _df_cat_series[_col] = _df_cat_series[_col].ewm(
+                span=smooth_length).mean()
     return _df_cat_series
 
 
@@ -353,10 +354,10 @@ def plot_cat_time_series_plotly(
         val_cols=_col_cats,
         hover_nm_x_col=display_nm_col_time,
         hover_nm_y_col=display_nm_col_val,
-        other_hovers_in_plot=dict(Weekday="Weekday"),
+        other_hovers_in_plot={"Weekday": "Weekday"},
         plot_title=plot_title,
         xaxis_title=x_axis_title,
         yaxis_title=y_axis_title,
         legend_title=legend_title,
     )
-    return dict(df=_df_cat_series, fig=_fig)
+    return {"df": _df_cat_series, "fig": _fig}
