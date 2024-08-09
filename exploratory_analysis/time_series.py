@@ -93,6 +93,8 @@ def extract_time_series(
     display_nm_col_val: Optional[str] = None,
     display_nm_col_smoothed: Optional[List[str]] = None,
     aggregator_data: Optional[str] = "sum",
+    method_smoother: Optional[str] = "ewm",
+    aggregator_smoother: Optional[str] = "mean",
 ) -> pd.DataFrame:
     """Function for extracting time related quantity from a DF
     by grouping. Moreover, one can provide smoothed time-series (ewm),
@@ -116,6 +118,12 @@ def extract_time_series(
             Defaults to None.
         aggregator_data (Optional[str], optional): Method for aggregating the data.
             Defaults to "sum".
+        method_smoother (Optional[str], optional): Method for creating sliding window.
+            Options are exponentially weighted (ewm) or usual sliding window (rolling)
+            Defaults to "ewm".
+        aggregator_smoother (Optional[str], optional): Method for aggregating data
+                in sliding window.
+            Defaults to "mean".        
 
     Returns:
         pd.DataFrame: Time-series resulting from aggregating the raw data and eventual smoothing
@@ -134,7 +142,14 @@ def extract_time_series(
         ]
 
     for _ind, _length in enumerate(smooth_lengths):
-        _df[display_nm_col_smoothed[_ind]] = _df[col_val].ewm(span=_length).mean()
+        _arg_smooth = {
+            "ewm": {"span": _length},
+            "rolling": {"window": _length, "min_periods": 1}
+
+        }[method_smoother]
+        _smooth = getattr(_df[col_val], method_smoother)(**_arg_smooth)
+        _df[display_nm_col_smoothed[_ind]] = getattr(
+            _smooth, aggregator_smoother)()
 
     if display_nm_col_val is not None:
         _df = _df.rename(columns={col_val: display_nm_col_val})
@@ -157,6 +172,8 @@ def plot_smoothed_time_series_agg(
     extract_weekday: Optional[bool] = False,
     aggregator_data: Optional[str] = "sum",
     norm_val: Optional[int] = None,
+    method_smoother: Optional[str] = "ewm",
+    aggregator_smoother: Optional[str] = "mean",
 ) -> Dict[str, Union[pd.DataFrame, Figure]]:
     """Function for plotting the time-series,
     resulting by aggregation and subsequent smoothing (EWM)
@@ -182,6 +199,12 @@ def plot_smoothed_time_series_agg(
         norm_val (Optional[int], optional): Desired normalization of the time-series value.
             Time-series values will be then divided by the given value
             Defaults to None, here no normalization is desired.
+        method_smoother (Optional[str], optional): Method for creating sliding window.
+            Options are exponentially weighted (ewm) or usual sliding window (rolling)
+            Defaults to "ewm".
+        aggregator_smoother (Optional[str], optional): Method for aggregating data
+                in sliding window.
+            Defaults to "mean".
 
     Returns:
         Dict[str,Union[pd.DataFrame,Figure]]: Results - DF of the smoothed time series
@@ -196,6 +219,8 @@ def plot_smoothed_time_series_agg(
         display_nm_col_val=display_nm_col_val,
         display_nm_col_smoothed=display_nm_col_smoothed,
         aggregator_data=aggregator_data,
+        method_smoother=method_smoother,
+        aggregator_smoother=aggregator_smoother
     )
 
     _arg_plot = dict(
