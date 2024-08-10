@@ -53,7 +53,7 @@ class DataImport:
         if self.file_format == "csv":
             parse_dates = None if self.parse_dates is None else self.parse_dates
             return pd.read_csv(
-                self.file_path, parse_dates=parse_dates, dayfirst=self.dayfirst
+                self.file_path, parse_dates=parse_dates, dayfirst=self.dayfirst, low_memory=False
             )
 
 
