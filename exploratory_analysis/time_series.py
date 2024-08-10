@@ -20,6 +20,8 @@ def plot_time_series_plotly(
     yaxis_title: Optional[str] = None,
     legend_title: Optional[str] = None,
     other_hovers_in_plot: Optional[Dict[str, str]] = None,
+    style_hover_x: Optional[str] = None,
+    style_hover_y: Optional[str] = None,
 ) -> Figure:
     """Function for plotting time-series in plotly
     Args:
@@ -42,7 +44,11 @@ def plot_time_series_plotly(
         legend_title (Optional[str], optional): Title of the legend.
             Defaults to None.
         other_hovers_in_plot (Optional[Dict[str, str]], optional): Column names of the values
-            to be shown in t
+            to be shown in the plots
+        style_hover_x (Optional[str], optional): Style of the values of x-axis hover.
+            Defaults to None
+        style_hover_y (Optional[str], optional): Style of the values of y-axis hover.
+            Defaults to None
     Returns:
         Figure: Resulting plotly figure
     """
@@ -72,7 +78,13 @@ def plot_time_series_plotly(
     _hover_nm_y_col = hover_nm_y_col if hover_nm_y_col is not None else "Values"
 
     # Add x and y values in hover
-    hover_text = f"{_hover_nm_x_col}: %{{x}}<br>{_hover_nm_y_col}: %{{y}}<br>"
+    _x_formatting = "x"
+    if style_hover_x is not None:
+        _x_formatting += f"{style_hover_x}"
+    _y_formatting = "y"
+    if style_hover_y is not None:
+        _y_formatting += f"{style_hover_y}"
+    hover_text = f"{_hover_nm_x_col}: %{{{_x_formatting}}}<br>{_hover_nm_y_col}: %{{{_y_formatting}}}<br>"
 
     if other_hovers_in_plot is not None:
         for _ind, _display_text in enumerate(other_hovers_in_plot.values()):
@@ -174,6 +186,8 @@ def plot_smoothed_time_series_agg(
     norm_val: Optional[int] = None,
     method_smoother: Optional[str] = "ewm",
     aggregator_smoother: Optional[str] = "mean",
+    style_hover_x: Optional[str] = None,
+    style_hover_y: Optional[str] = None,
 ) -> Dict[str, Union[pd.DataFrame, Figure]]:
     """Function for plotting the time-series,
     resulting by aggregation and subsequent smoothing (EWM)
@@ -205,6 +219,10 @@ def plot_smoothed_time_series_agg(
         aggregator_smoother (Optional[str], optional): Method for aggregating data
                 in sliding window.
             Defaults to "mean".
+        style_hover_x (Optional[str], optional): Style of the values of x-axis hover.
+            Defaults to None
+        style_hover_y (Optional[str], optional): Style of the values of y-axis hover.
+            Defaults to None
 
     Returns:
         Dict[str,Union[pd.DataFrame,Figure]]: Results - DF of the smoothed time series
@@ -238,6 +256,12 @@ def plot_smoothed_time_series_agg(
     if extract_weekday:
         _df["weekday"] = _df["date"].apply(lambda x: x.strftime("%A"))
         _arg_plot = {**_arg_plot, "other_hovers_in_plot": {"weekday": "Day"}}
+
+    if style_hover_x is not None:
+        _arg_plot = {**_arg_plot, "style_hover_x": style_hover_x}
+
+    if style_hover_y is not None:
+        _arg_plot = {**_arg_plot, "style_hover_y": style_hover_y}
 
     fig = plot_time_series_plotly(**_arg_plot)
 
